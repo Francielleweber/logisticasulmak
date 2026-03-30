@@ -295,7 +295,7 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
   <div class="hist-body">
     <table class="hist-table" id="hist-table">
       <thead>
-        <tr><th>Pedido</th><th>Filial</th><th>Tipo</th><th>Cliente</th><th>Empresa</th><th>Situação</th><th>Data</th><th>Hora</th></tr>
+        <tr><th>Pedido</th><th>Filial</th><th>Tipo</th><th>Cliente</th><th>Empresa</th><th>Situação</th><th>Data</th><th>Hora</th><th id="th-acoes" style="display:none;">Ações</th></tr>
       </thead>
       <tbody id="hist-tbody"></tbody>
     </table>
@@ -605,12 +605,29 @@ function renderHistorico() {
     return;
   }
   var tipoLabel = {entrega:'Entrega', substituicao:'Substituição', devolucao:'Devolução'};
+  var thAcoes = document.getElementById('th-acoes');
+  if (thAcoes) thAcoes.style.display = isAdmin ? '' : 'none';
   lista.sort(function(a,b){ return b.id.localeCompare(a.id); }).forEach(function(h) {
     var tr = document.createElement('tr');
     var sitColor = h.situacao === 'Finalizada' ? '#00897B' : '#757575';
-    tr.innerHTML = '<td><strong>'+h.id+'</strong></td><td>'+h.filial+'</td><td>'+(tipoLabel[h.tipo]||h.tipo)+'</td><td>'+(h.empresa||'')+'</td><td>'+(h.cliente||'')+'</td><td><span class="badge" style="background:'+sitColor+';color:#fff;">'+h.situacao+'</span></td><td>'+(h.data||'')+'</td><td>'+(h.hora||'')+'</td>';
+    var acaoCell = isAdmin
+      ? '<td><button onclick="excluirHistorico(\''+h.id+'\')" style="background:transparent;border:none;color:#e53935;cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:4px;" title="Excluir registro">🗑️</button></td>'
+      : '<td style="display:none;"></td>';
+    tr.innerHTML = '<td><strong>'+h.id+'</strong></td><td>'+h.filial+'</td><td>'+(tipoLabel[h.tipo]||h.tipo)+'</td><td>'+(h.empresa||'')+'</td><td>'+(h.cliente||'')+'</td><td><span class="badge" style="background:'+sitColor+';color:#fff;">'+h.situacao+'</span></td><td>'+(h.data||'')+'</td><td>'+(h.hora||'')+'</td>'+acaoCell;
     tbody.appendChild(tr);
   });
+}
+
+
+function excluirHistorico(id) {
+  if (!isAdmin) return;
+  if (!confirm('Excluir este registro do histórico? Esta ação não pode ser desfeita.')) return;
+  var idx = historico.findIndex(function(h){ return h.id === id; });
+  if (idx === -1) return;
+  historico.splice(idx, 1);
+  saveHistoricoLocal();
+  renderHistorico();
+  showToast('Registro excluído do histórico.');
 }
 
 
