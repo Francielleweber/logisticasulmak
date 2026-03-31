@@ -72,20 +72,20 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
 .card-date { font-size:.7rem; color:#999; margin-top:2px; }
 .badge { font-size:.73rem; font-weight:700; padding:5px 10px; border-radius:4px; white-space:nowrap; text-transform:uppercase; letter-spacing:.3px; flex-shrink:0; }
 .badge-novo { background:#2196F3; color:#fff; }
-.badge-patrimonio { background:#FF9800; color:#fff; }
-.badge-contrato { background:#4CAF50; color:#fff; }
+.badge-patrimonio { background:#ffff00; color:#333; }
+.badge-contrato { background:#3da14d; color:#fff; }
 .badge-falta { background:#F44336; color:#fff; }
 .badge-andamento { background:#9C27B0; color:#fff; }
 .badge-finalizada { background:#00897B; color:#fff; }
 .badge-cancelada { background:#757575; color:#fff; }
 /* Substituição */
-.badge-troca-ag   { background:#FF9800; color:#fff; }
-.badge-ag-termo   { background:#FFC107; color:#333; }
-.badge-lib-troca  { background:#4CAF50; color:#fff; }
+.badge-troca-ag   { background:#2196F3; color:#fff;}
+.badge-ag-termo   { background:#ffff00; color:#333; }
+.badge-lib-troca  { background:#3da14d; color:#fff;}
 .badge-falta-sub  { background:#F44336; color:#fff; }
 /* Devolução */
-.badge-ag-pre-dev      { background:#FF9800; color:#fff; }
-.badge-dev-solicitada  { background:#4CAF50; color:#fff; }
+.badge-ag-pre-dev      { background:#2196F3; color:#fff; }
+.badge-dev-solicitada  { background:#3da14d; color:#fff; }
 .badge-coleta          { background:#2196F3; color:#fff; }
 .card-nome { font-weight:700; font-size:.95rem; color:#111; margin:6px 0 5px; text-transform:uppercase; }
 .card-info { font-size:.76rem; color:#444; margin-bottom:2px; line-height:1.4; }
@@ -426,9 +426,9 @@ const FILIAIS    = ['Porto Alegre','São Leopoldo','Passo Fundo','Mato Grosso do
 const TIPOS      = ['entrega','substituicao','devolucao'];
 
 const SIT_POR_TIPO = {
-  entrega:      ['Novo Pedido','C/ Patrimônio','Contrato Pronto','Em Andamento','Em Falta','Finalizada','Cancelada'],
-  substituicao: ['Troca (Ag. Patrimônio)','Ag. Termo de Substituição','Lib. para Troca','Falta','Finalizada'],
-  devolucao:    ['Ag. Pré Devolução','Devolução Solicitada','Coleta em Andamento','Finalizada']
+  entrega:      ['Novo Pedido','C/ Patrimônio','Contrato Pronto','Em Rota','Em Falta','Finalizada','Cancelada'],
+  substituicao: ['Troca (Ag. Patrimônio)','Ag. Termo de Substituição','Lib. para Troca','Em Rota','Em Falta','Finalizada'],
+  devolucao:    ['Ag. Pré Devolução','Devolução Solicitada','Em Rota','Finalizada']
 };
 const SIT_HIST_POR_TIPO = {
   entrega:      ['Finalizada','Cancelada'],
@@ -978,7 +978,7 @@ function badgeClass(s) {
     'C/ Patrimônio':             'badge-patrimonio',
     'Contrato Pronto':           'badge-contrato',
     'Em Falta':                  'badge-falta',
-    'Em Andamento':              'badge-andamento',
+    'Em Rota':                   'badge-andamento',
     'Finalizada':                'badge-finalizada',
     'Cancelada':                 'badge-cancelada',
     'Troca (Ag. Patrimônio)':   'badge-troca-ag',
