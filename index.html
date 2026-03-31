@@ -448,10 +448,10 @@ let filialAtual  = null;
 let usuarioLogado= null;
 let isAdmin      = false;
 let editandoId   = null;
-let histTabAtual  = 'finalizadas';
-let sheetsURL     = localStorage.getItem('sulmak_sheets_url') || '';
-let pollingTimer  = null;
-const POLLING_MS  = 15000; // atualiza a cada 15 segundos
+let histTabAtual = 'finalizadas';
+let sheetsURL    = localStorage.getItem('sulmak_sheets_url') || '';
+let pollingTimer = null;
+const POLLING_MS = 15000;
 
 // persistência local
 function loadCounters() {
@@ -535,6 +535,7 @@ function entrarNoApp() {
   document.getElementById('hist-screen').style.display = 'none';
   atualizarBotoesFilial();
   updateSheetsUI();
+  if (sheetsURL) buscarDadosSheets(); // busca imediata ao entrar
   renderBoard();
   iniciarPolling();
 }
@@ -829,7 +830,7 @@ async function excluir(filial, tipo, id) {
   await enviarSheets({id: id, filial: filial, tipo: tipo}, 'delete');
 }
 
-// ---- POLLING TEMPO REAL ----
+// ---- POLLING TEMPO REAL (via POST para evitar bloqueio CORS) ----
 function iniciarPolling() {
   pararPolling();
   if (!sheetsURL) return;
@@ -843,12 +844,16 @@ function pararPolling() {
 async function buscarDadosSheets() {
   if (!sheetsURL) return;
   try {
-    var resp = await fetch(sheetsURL + '?action=dados', { cache: 'no-store' });
+    var resp = await fetch(sheetsURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ acao: 'buscar' })
+    });
     if (!resp.ok) return;
     var json = await resp.json();
     if (json.status !== 'ok' || !json.dados) return;
 
-    // Reconstrói o objeto dados a partir do Sheets
+    // Reconstrói dados por filial/tipo a partir do Sheets
     var novosDados = {};
     FILIAIS.forEach(function(f) {
       novosDados[f] = { entrega: [], substituicao: [], devolucao: [] };
@@ -858,7 +863,7 @@ async function buscarDadosSheets() {
     json.dados.forEach(function(item) {
       if (!novosDados[item.filial]) return;
       if (!novosDados[item.filial][item.tipo]) return;
-      if (sitHist.includes(item.situacao)) return; // vai pro histórico
+      if (sitHist.includes(item.situacao)) return;
       novosDados[item.filial][item.tipo].push(item);
     });
 
@@ -866,15 +871,14 @@ async function buscarDadosSheets() {
     saveDadosLocal();
     renderBoard();
 
-    // Indicador visual discreto de sincronização
+    // Pisca o dot do Sheets como indicador de sync
     var dot = document.getElementById('sheets-dot');
     if (dot) {
-      dot.style.opacity = '0.3';
-      setTimeout(function(){ dot.style.opacity = '1'; }, 400);
+      dot.style.opacity = '0.2';
+      setTimeout(function(){ dot.style.opacity = '1'; }, 300);
     }
   } catch(e) {
-    // falha silenciosa no polling — não interrompe o usuário
-    console.warn('Polling Sheets falhou:', e);
+    console.warn('Polling falhou:', e);
   }
 }
 
@@ -939,7 +943,7 @@ function saveConfig() {
   localStorage.setItem('sulmak_sheets_url', url);
   closeConfig();
   updateSheetsUI();
-  iniciarPolling(); // reinicia polling com nova URL
+  if (url) { buscarDadosSheets(); iniciarPolling(); } else { pararPolling(); }
   showToast(url ? 'Google Sheets conectado!' : 'URL removida. Sheets desconectado.');
 }
 
