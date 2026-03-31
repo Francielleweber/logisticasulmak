@@ -777,11 +777,12 @@ async function saveDemanda() {
   var unidade  = document.getElementById('f-unidade').value;
   var situacao = document.getElementById('f-situacao').value;
   var now      = new Date();
-  var dataStr  = now.toLocaleDateString('pt-BR');
+  var dataStr  = now.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
   var horaStr  = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
 
   var idFinal = editandoId;
   if (editandoId) {
+    // edição: remove versão antiga localmente
     FILIAIS.forEach(function(f){ TIPOS.forEach(function(t){
       var idx = dados[f][t].findIndex(function(d){ return d.id === editandoId; });
       if (idx !== -1) dados[f][t].splice(idx, 1);
@@ -789,9 +790,31 @@ async function saveDemanda() {
     var hidx = historico.findIndex(function(h){ return h.id === editandoId; });
     if (hidx !== -1) historico.splice(hidx, 1);
   } else {
-    idFinal = fmtId(counters[unidade]);
-    counters[unidade]++;
-    saveCounters(counters);
+    // novo pedido: busca o próximo ID global do Sheets (se conectado)
+    if (sheetsURL) {
+      try {
+        showToast('Obtendo número do pedido...');
+        var resp = await fetch(sheetsURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ acao: 'proximoId' })
+        });
+        var json = await resp.json();
+        if (json.status === 'ok' && json.id) {
+          idFinal = json.id;
+        } else {
+          idFinal = fmtId(counters[unidade]);
+          counters[unidade]++; saveCounters(counters);
+        }
+      } catch(e) {
+        idFinal = fmtId(counters[unidade]);
+        counters[unidade]++; saveCounters(counters);
+      }
+    } else {
+      // sem Sheets: usa contador local
+      idFinal = fmtId(counters[unidade]);
+      counters[unidade]++; saveCounters(counters);
+    }
   }
 
   var demanda = {
