@@ -451,7 +451,7 @@ let editandoId   = null;
 let histTabAtual = 'finalizadas';
 let sheetsURL    = localStorage.getItem('sulmak_sheets_url') || '';
 let pollingTimer = null;
-const POLLING_MS = 15000;
+const POLLING_MS = 5000;
 
 // persistência local
 function loadCounters() {
@@ -864,6 +864,8 @@ async function buscarDadosSheets() {
       if (!novosDados[item.filial]) return;
       if (!novosDados[item.filial][item.tipo]) return;
       if (sitHist.includes(item.situacao)) return;
+      // Garante zeros à esquerda no ID (Sheets pode converter para número)
+      item.id = String(item.id).padStart(5, '0');
       novosDados[item.filial][item.tipo].push(item);
     });
 
@@ -1062,7 +1064,7 @@ function buildCard(item, filial, tipo) {
       } else {
         pat = p.patrimonio ? ' | '+p.patrimonio : '';
       }
-      prodHTML += '<div class="card-prod-row">'+p.nome+(p.periodo?' | '+p.periodo:'')+pat+'</div>';
+      prodHTML += '<div class="card-prod-row">'+p.nome+(p.periodo?' | '+p.periodo:'')+(p.valor?' | R$ '+p.valor:'')+pat+'</div>';
     });
     prodHTML += '</div>';
   }
