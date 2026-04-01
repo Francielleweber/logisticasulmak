@@ -119,7 +119,7 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
 .modal-body { padding:20px; }
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
 .form-row.full { grid-template-columns:1fr; }
-.fg { display:flex; flex-direction:column; gap:4px; }
+.fg { display:flex; flex-direction:column; gap:10px; }
 .fg label { font-size:.75rem; color:#555; font-weight:500; text-transform:uppercase; letter-spacing:.4px; }
 .fg input,.fg select,.fg textarea { border:1px solid #ddd; border-radius:5px; padding:8px 10px; font-family:'Calibri','Trebuchet MS','Gill Sans',sans-serif; font-size:.88rem; outline:none; transition:border-color .15s; }
 .fg input:focus,.fg select:focus,.fg textarea:focus { border-color:#1a7a3c; }
@@ -1425,10 +1425,10 @@ function buildCard(item, filial, tipo) {
     +'</div>'
     +'<span class="badge '+badgeClass(item.situacao)+'">'+item.situacao+'</span>'
     +'</div>'
-    +'<div class="card-nome">'+item.cliente+'</div>'
-    +(item.empresa?'<div class="card-info"><b>Cliente:</b> '+item.empresa+'</div>':'')
+    +(item.empresa?'<div class="card-nome">'+item.empresa+'</div>':'<div class="card-nome">'+item.cliente+'</div>')
     +(item.endereco?'<div class="card-info"><b>Endereço:</b> '+item.endereco+'</div>':'')
     +(item.contato?'<div class="card-info"><b>Contato:</b> '+item.contato+'</div>':'')
+    +(item.empresa?'<div class="card-info"><b>Resp:</b> '+item.cliente+'</div>':'')
     +obsHTML+prodHTML
     +'<div class="card-footer">'
     +'<button class="btn-sit-change" onclick="openSitModal(\''+filial+'\',\''+tipo+'\',\''+item.id+'\')">🔄 Situação</button>'
