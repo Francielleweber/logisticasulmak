@@ -480,6 +480,53 @@ let historico = loadHistorico();
 
 function fmtId(n) { return String(n).padStart(5,'0'); }
 
+// Converte valores de data vindos do Sheets para DD/MM/AAAA
+function parseSheetsDate(val) {
+  if (!val) return '';
+  var s = String(val).trim();
+  // Já está no formato correto DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+  // Tenta interpretar como objeto Date (Sheets pode retornar string de Date)
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+  return s;
+}
+
+// Converte valores de hora vindos do Sheets para HH:MM
+// O Sheets armazena horas como datas com base em 30/12/1899 — tratamos isso aqui
+function parseSheetsHora(val) {
+  if (!val) return '';
+  var s = String(val).trim();
+  // Já está no formato HH:MM
+  if (/^\d{2}:\d{2}$/.test(s)) return s;
+  // Tenta interpretar como Date (inclui o caso "Sat Dec 30 1899 HH:MM:SS ...")
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  }
+  return s;
+}
+
+// Retorna o próximo ID global calculando o maior ID já existente + 1
+function proximoIdLocal() {
+  var maxId = 0;
+  FILIAIS.forEach(function(f) {
+    TIPOS.forEach(function(t) {
+      (dados[f] && dados[f][t] ? dados[f][t] : []).forEach(function(d) {
+        var n = parseInt(d.id, 10);
+        if (!isNaN(n) && n > maxId) maxId = n;
+      });
+    });
+  });
+  historico.forEach(function(h) {
+    var n = parseInt(h.id, 10);
+    if (!isNaN(n) && n > maxId) maxId = n;
+  });
+  return fmtId(maxId + 1);
+}
+
 
 function showToast(msg, type) {
   const t = document.getElementById('toast');
@@ -803,17 +850,15 @@ async function saveDemanda() {
         if (json.status === 'ok' && json.id) {
           idFinal = json.id;
         } else {
-          idFinal = fmtId(counters[unidade]);
-          counters[unidade]++; saveCounters(counters);
+          // fallback: usa o maior ID existente + 1 (global entre filiais)
+          idFinal = proximoIdLocal();
         }
       } catch(e) {
-        idFinal = fmtId(counters[unidade]);
-        counters[unidade]++; saveCounters(counters);
+        idFinal = proximoIdLocal();
       }
     } else {
-      // sem Sheets: usa contador local
-      idFinal = fmtId(counters[unidade]);
-      counters[unidade]++; saveCounters(counters);
+      // sem Sheets: usa o maior ID já existente + 1 (evita duplicatas entre usuários)
+      idFinal = proximoIdLocal();
     }
   }
 
@@ -888,7 +933,10 @@ async function buscarDadosSheets() {
       if (!novosDados[item.filial][item.tipo]) return;
       if (sitHist.includes(item.situacao)) return;
       // Garante zeros à esquerda no ID (Sheets pode converter para número)
-      item.id = String(item.id).padStart(5, '0');
+      item.id   = String(item.id).padStart(5, '0');
+      // Normaliza data e hora que o Sheets pode ter convertido para objeto Date
+      item.data = parseSheetsDate(item.data);
+      item.hora = parseSheetsHora(item.hora);
       novosDados[item.filial][item.tipo].push(item);
     });
 
