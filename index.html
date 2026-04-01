@@ -42,6 +42,14 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
 .btn-logout { background:transparent; border:1px solid rgba(255,255,255,.4); color:#fff; border-radius:6px; padding:6px 12px; font-size:.8rem; cursor:pointer; }
 .btn-logout:hover { background:rgba(255,255,255,.15); }
 
+/* BOTÃO ATUALIZAR MANUAL */
+.btn-refresh { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.4); color:#fff; border-radius:6px; padding:6px 12px; font-size:.8rem; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all .15s; }
+.btn-refresh:hover { background:rgba(255,255,255,.28); }
+.btn-refresh:disabled { opacity:.5; cursor:not-allowed; }
+.btn-refresh .spin { display:inline-block; }
+.btn-refresh.loading .spin { animation:spinIcon .7s linear infinite; }
+@keyframes spinIcon { to { transform:rotate(360deg); } }
+
 /* FILIAL SWITCHER */
 .filial-switcher-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:400; align-items:center; justify-content:center; }
 .filial-switcher-overlay.open { display:flex; }
@@ -134,14 +142,38 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
 .hist-tabs { display:flex; gap:8px; padding:12px 16px 0; background:#fff; border-bottom:2px solid #eee; }
 .hist-tab { padding:8px 20px; border:none; background:transparent; cursor:pointer; font-family:'Calibri','Trebuchet MS','Gill Sans',sans-serif; font-size:.88rem; font-weight:600; color:#888; border-bottom:3px solid transparent; margin-bottom:-2px; }
 .hist-tab.active { color:#1a7a3c; border-bottom-color:#1a7a3c; }
-.hist-filters { padding:12px 16px; background:#fff; display:flex; gap:10px; align-items:center; border-bottom:1px solid #eee; flex-wrap:wrap; }
-.hist-filters select, .hist-filters input { border:1px solid #ddd; border-radius:5px; padding:7px 10px; font-family:'Calibri','Trebuchet MS','Gill Sans',sans-serif; font-size:.85rem; outline:none; }
-.hist-body { padding:16px; overflow-y:auto; height:calc(100vh - 160px); }
+.hist-filters { padding:10px 16px; background:#fff; display:flex; gap:8px; align-items:center; border-bottom:1px solid #eee; flex-wrap:wrap; }
+.hist-filters select, .hist-filters input[type="text"] { border:1px solid #ddd; border-radius:5px; padding:7px 10px; font-family:'Calibri','Trebuchet MS','Gill Sans',sans-serif; font-size:.85rem; outline:none; }
+.hist-filters input[type="date"] { border:1px solid #ddd; border-radius:5px; padding:6px 10px; font-family:'Calibri','Trebuchet MS','Gill Sans',sans-serif; font-size:.85rem; outline:none; color:#333; }
+.hist-filters label { font-size:.75rem; color:#666; font-weight:600; white-space:nowrap; }
+.hist-filters .filter-sep { width:1px; height:24px; background:#ddd; margin:0 4px; }
+.hist-body { padding:16px; overflow-y:auto; height:calc(100vh - 195px); }
 .hist-table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); }
 .hist-table th { background:#37474F; color:#fff; padding:10px 12px; text-align:left; font-size:.78rem; text-transform:uppercase; letter-spacing:.4px; }
 .hist-table td { padding:9px 12px; border-bottom:1px solid #f0f0f0; font-size:.82rem; color:#333; }
 .hist-table tr:last-child td { border-bottom:none; }
 .hist-table tr:hover td { background:#f9f9f9; }
+
+/* RELATÓRIO */
+#rel-screen { display:none; }
+.rel-header { background:#1a3a5c; padding:0 16px; display:flex; align-items:center; justify-content:space-between; height:50px; box-shadow:0 2px 6px rgba(0,0,0,.2); }
+.rel-filters { padding:10px 16px; background:#fff; display:flex; gap:8px; align-items:center; border-bottom:2px solid #e0e0e0; flex-wrap:wrap; }
+.rel-filters select, .rel-filters input { border:1px solid #ddd; border-radius:5px; padding:7px 10px; font-family:'Calibri','Trebuchet MS','Gill Sans',sans-serif; font-size:.85rem; outline:none; color:#333; }
+.rel-filters label { font-size:.75rem; color:#666; font-weight:600; white-space:nowrap; }
+.rel-summary-bar { background:#e8f5e9; border-bottom:1px solid #c8e6c9; padding:8px 16px; display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+.rel-summary-item { font-size:.82rem; color:#2e7d32; font-weight:600; }
+.rel-summary-item span { color:#1b5e20; font-size:1rem; }
+.rel-body { padding:16px; overflow-y:auto; height:calc(100vh - 215px); }
+.rel-table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+.rel-table th { background:#1a3a5c; color:#fff; padding:10px 12px; text-align:left; font-size:.78rem; text-transform:uppercase; letter-spacing:.4px; }
+.rel-table td { padding:9px 12px; border-bottom:1px solid #f0f0f0; font-size:.82rem; color:#333; }
+.rel-table tr:last-child td { border-bottom:none; }
+.rel-table tr:hover td { background:#f9f9f9; }
+.rel-empty { text-align:center; color:#aaa; font-size:.88rem; padding:40px; }
+.btn-rel-print { background:#1a3a5c; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:.8rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; }
+.btn-rel-print:hover { background:#162e4a; }
+.btn-rel { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.4); color:#fff; border-radius:6px; padding:6px 12px; font-size:.8rem; cursor:pointer; }
+.btn-rel:hover { background:rgba(255,255,255,.25); }
 
 /* TOAST */
 .toast { position:fixed; bottom:24px; right:24px; background:#1a7a3c; color:#fff; padding:12px 20px; border-radius:8px; font-size:.88rem; font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,.2); z-index:9999; display:none; animation:toastIn .2s ease; }
@@ -185,6 +217,17 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
 .sheets-status-bar { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:6px; margin-bottom:14px; font-size:.82rem; font-weight:600; }
 .sheets-status-bar.connected { background:#e8f5e9; border:1px solid #a5d6a7; color:#2e7d32; }
 .sheets-status-bar.disconnected { background:#f5f5f5; border:1px solid #e0e0e0; color:#757575; }
+
+/* IMPRESSÃO DO RELATÓRIO */
+@media print {
+  body > *:not(#rel-screen) { display:none !important; }
+  #rel-screen { display:block !important; }
+  .rel-header, .rel-filters, .rel-summary-bar { display:none !important; }
+  .rel-body { height:auto !important; overflow:visible !important; padding:0 !important; }
+  .rel-table { box-shadow:none !important; }
+  .rel-table th { background:#1a3a5c !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .badge { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
 </style>
 </head>
 <body>
@@ -223,6 +266,9 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
     <div class="h-right">
       <button class="btn-new" id="btn-nova-demanda" onclick="openModal(null)">+ Nova Demanda</button>
       <button class="btn-filial-switch" onclick="openFilialSwitcher()" title="Trocar filial">🔄 Filial</button>
+      <button class="btn-refresh" id="btn-refresh" onclick="manualRefresh()" title="Sincronizar dados com Google Sheets">
+        <span class="spin">↻</span> Atualizar
+      </button>
       <button class="btn-hist" onclick="showHistorico()">📋 Histórico</button>
       <button class="btn-sheets disconnected" id="btn-sheets-status" onclick="openConfig()" title="Configurar integração com Google Sheets">
         <span class="sheets-dot off" id="sheets-dot"></span>
@@ -273,9 +319,12 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
 
 <!-- HISTÓRICO -->
 <div id="hist-screen">
-  <div class="hist-header" style="background:#37474F;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:50px;box-shadow:0 2px 6px rgba(0,0,0,.2);">
+  <div class="hist-header" style="box-shadow:0 2px 6px rgba(0,0,0,.2);">
     <div class="h-logo"><img src="sulmak.png" alt="" width="40px"> <span style="color:#fff;font-weight:700;">Histórico de Demandas</span></div>
-    <button onclick="showApp()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:6px 14px;font-size:.82rem;cursor:pointer;">&#8592; Voltar ao Board</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="showRelatorio()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:6px 14px;font-size:.82rem;cursor:pointer;">📊 Relatório</button>
+      <button onclick="showApp()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:6px 14px;font-size:.82rem;cursor:pointer;">&#8592; Voltar ao Board</button>
+    </div>
   </div>
   <div class="hist-tabs">
     <button class="hist-tab active" onclick="switchHistTab('finalizadas')" id="tab-finalizadas">&#10003; Finalizadas</button>
@@ -290,7 +339,13 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
       <option value="">Todos os tipos</option>
       <option value="entrega">Entrega</option><option value="substituicao">Substituição</option><option value="devolucao">Devolução</option>
     </select>
-    <input type="text" id="hf-busca" placeholder="Buscar pedido, cliente..." oninput="renderHistorico()" style="min-width:200px;">
+    <input type="text" id="hf-busca" placeholder="Buscar pedido, cliente..." oninput="renderHistorico()" style="min-width:180px;">
+    <div class="filter-sep"></div>
+    <label>De:</label>
+    <input type="date" id="hf-data-inicio" onchange="renderHistorico()" title="Data de inclusão — início">
+    <label>Até:</label>
+    <input type="date" id="hf-data-fim" onchange="renderHistorico()" title="Data de inclusão — fim">
+    <button onclick="limparFiltrosHist()" style="background:#f0f0f0;border:1px solid #ccc;border-radius:5px;padding:6px 12px;font-size:.8rem;cursor:pointer;color:#555;">✕ Limpar datas</button>
   </div>
   <div class="hist-body">
     <table class="hist-table" id="hist-table">
@@ -298,6 +353,55 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
         <tr><th>Pedido</th><th>Filial</th><th>Tipo</th><th>Cliente</th><th>Empresa</th><th>Situação</th><th>Data</th><th>Hora</th><th id="th-acoes" style="display:none;">Ações</th></tr>
       </thead>
       <tbody id="hist-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RELATÓRIO -->
+<div id="rel-screen">
+  <div class="rel-header">
+    <div class="h-logo"><span style="color:#fff;font-size:1.1rem;font-weight:700;">📊 Relatório de Demandas</span></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-rel-print" onclick="imprimirRelatorio()">🖨️ Imprimir</button>
+      <button class="btn-rel" onclick="showHistorico()">&#8592; Voltar ao Histórico</button>
+      <button class="btn-rel" onclick="showApp()">⌂ Board</button>
+    </div>
+  </div>
+  <div class="rel-filters">
+    <label>Período:</label>
+    <input type="date" id="rf-data-inicio" onchange="renderRelatorio()">
+    <label>até</label>
+    <input type="date" id="rf-data-fim" onchange="renderRelatorio()">
+    <div class="filter-sep" style="width:1px;height:24px;background:#ddd;margin:0 4px;"></div>
+    <input type="text" id="rf-cliente" placeholder="Cliente ou empresa..." oninput="renderRelatorio()" style="min-width:180px;">
+    <select id="rf-filial" onchange="renderRelatorio()">
+      <option value="">Todas as filiais</option>
+      <option>Porto Alegre</option><option>São Leopoldo</option><option>Passo Fundo</option><option>Mato Grosso do Sul</option>
+    </select>
+    <select id="rf-tipo" onchange="renderRelatorio()">
+      <option value="">Todos os tipos</option>
+      <option value="entrega">Entrega</option><option value="substituicao">Substituição</option><option value="devolucao">Devolução</option>
+    </select>
+    <select id="rf-situacao" onchange="renderRelatorio()">
+      <option value="">Todas as situações</option>
+      <option value="Finalizada">Finalizada</option>
+      <option value="Cancelada">Cancelada</option>
+    </select>
+    <button onclick="limparFiltrosRel()" style="background:#f0f0f0;border:1px solid #ccc;border-radius:5px;padding:6px 12px;font-size:.8rem;cursor:pointer;color:#555;">✕ Limpar</button>
+  </div>
+  <div class="rel-summary-bar" id="rel-summary-bar">
+    <div class="rel-summary-item">Total: <span id="rel-total">0</span></div>
+    <div class="rel-summary-item">Finalizadas: <span id="rel-fin">0</span></div>
+    <div class="rel-summary-item">Canceladas: <span id="rel-can">0</span></div>
+  </div>
+  <div class="rel-body">
+    <table class="rel-table" id="rel-table">
+      <thead>
+        <tr>
+          <th>Pedido</th><th>Filial</th><th>Tipo</th><th>Empresa (Cliente)</th><th>Responsável</th><th>Endereço</th><th>Situação</th><th>Data</th><th>Hora</th>
+        </tr>
+      </thead>
+      <tbody id="rel-tbody"></tbody>
     </table>
   </div>
 </div>
@@ -421,7 +525,6 @@ const creds = {
   'admin':              { user:'admin', pass:'admin123', isAdmin:true }
 };
 
-
 const FILIAIS    = ['Porto Alegre','São Leopoldo','Passo Fundo','Mato Grosso do Sul'];
 const TIPOS      = ['entrega','substituicao','devolucao'];
 
@@ -450,8 +553,6 @@ let isAdmin      = false;
 let editandoId   = null;
 let histTabAtual = 'finalizadas';
 let sheetsURL    = localStorage.getItem('sulmak_sheets_url') || '';
-let pollingTimer = null;
-const POLLING_MS = 5000;
 
 // persistência local
 function loadCounters() {
@@ -480,13 +581,20 @@ let historico = loadHistorico();
 
 function fmtId(n) { return String(n).padStart(5,'0'); }
 
+// Converte DD/MM/AAAA → objeto Date (para comparações de período)
+function parseDataBR(s) {
+  if (!s) return null;
+  var parts = String(s).trim().split('/');
+  if (parts.length !== 3) return null;
+  var d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+  return isNaN(d.getTime()) ? null : d;
+}
+
 // Converte valores de data vindos do Sheets para DD/MM/AAAA
 function parseSheetsDate(val) {
   if (!val) return '';
   var s = String(val).trim();
-  // Já está no formato correto DD/MM/YYYY
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
-  // Tenta interpretar como objeto Date (Sheets pode retornar string de Date)
   var d = new Date(s);
   if (!isNaN(d.getTime())) {
     return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
@@ -495,13 +603,10 @@ function parseSheetsDate(val) {
 }
 
 // Converte valores de hora vindos do Sheets para HH:MM
-// O Sheets armazena horas como datas com base em 30/12/1899 — tratamos isso aqui
 function parseSheetsHora(val) {
   if (!val) return '';
   var s = String(val).trim();
-  // Já está no formato HH:MM
   if (/^\d{2}:\d{2}$/.test(s)) return s;
-  // Tenta interpretar como Date (inclui o caso "Sat Dec 30 1899 HH:MM:SS ...")
   var d = new Date(s);
   if (!isNaN(d.getTime())) {
     return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
@@ -526,7 +631,6 @@ function proximoIdLocal() {
   });
   return fmtId(maxId + 1);
 }
-
 
 function showToast(msg, type) {
   const t = document.getElementById('toast');
@@ -568,9 +672,7 @@ function doLogin() {
   entrarNoApp();
 }
 
-
 function atualizarBotoesFilial() {
-  // Todos podem incluir demandas — sem restrição por filial
   document.getElementById('btn-nova-demanda').style.display = '';
   document.querySelectorAll('.col-add-btn').forEach(function(b){ b.style.display = ''; });
 }
@@ -580,15 +682,15 @@ function entrarNoApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('hist-screen').style.display = 'none';
+  document.getElementById('rel-screen').style.display = 'none';
   atualizarBotoesFilial();
   updateSheetsUI();
-  if (sheetsURL) buscarDadosSheets(); // busca imediata ao entrar
+  // Busca imediata ao entrar (sem polling automático)
+  if (sheetsURL) buscarDadosSheets();
   renderBoard();
-  iniciarPolling();
 }
 
 function doLogout() {
-  pararPolling();
   filialLogada = null; filialSel = null; filialAtual = null; isAdmin = false;
   usuarioLogado = null; editandoId = null;
   document.getElementById('l-user').value = '';
@@ -597,6 +699,7 @@ function doLogout() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   document.getElementById('hist-screen').style.display = 'none';
+  document.getElementById('rel-screen').style.display = 'none';
 }
 
 // troca de filial
@@ -620,14 +723,92 @@ function openFilialSwitcher() {
 }
 function closeFilialSwitcher() { document.getElementById('fsw-overlay').classList.remove('open'); }
 
-// histórico
+// ---- ATUALIZAÇÃO MANUAL ----
+async function manualRefresh() {
+  if (!sheetsURL) {
+    showToast('Sheets não configurado. Configure a URL primeiro.', 'error');
+    return;
+  }
+  var btn = document.getElementById('btn-refresh');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  btn.querySelector('.spin').style.opacity = '0.7';
+  try {
+    await buscarDadosSheets();
+    showToast('Painel atualizado com sucesso!');
+  } catch(e) {
+    showToast('Erro ao atualizar. Verifique a conexão.', 'error');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    btn.querySelector('.spin').style.opacity = '1';
+  }
+}
+
+// ---- SINCRONIZAÇÃO COM SHEETS (busca ativos + histórico de uma vez) ----
+async function buscarDadosSheets() {
+  if (!sheetsURL) return;
+  try {
+    var resp = await fetch(sheetsURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ acao: 'buscarTodos' })
+    });
+    if (!resp.ok) return;
+    var json = await resp.json();
+    if (json.status !== 'ok') return;
+
+    // ---- Reconstrói dados ATIVOS por filial/tipo ----
+    var novosDados = {};
+    FILIAIS.forEach(function(f) {
+      novosDados[f] = { entrega: [], substituicao: [], devolucao: [] };
+    });
+
+    (json.ativos || []).forEach(function(item) {
+      if (!novosDados[item.filial] || !novosDados[item.filial][item.tipo]) return;
+      item.id   = String(item.id).padStart(5, '0');
+      item.data = parseSheetsDate(item.data);
+      item.hora = parseSheetsHora(item.hora);
+      novosDados[item.filial][item.tipo].push(item);
+    });
+
+    dados = novosDados;
+    saveDadosLocal();
+    renderBoard();
+
+    // ---- Atualiza HISTÓRICO a partir do Sheets ----
+    var novoHistorico = [];
+    (json.historico || []).forEach(function(item) {
+      item.id   = String(item.id).padStart(5, '0');
+      item.data = parseSheetsDate(item.data);
+      item.hora = parseSheetsHora(item.hora);
+      novoHistorico.push(item);
+    });
+    historico = novoHistorico;
+    saveHistoricoLocal();
+
+    // Pisca o dot do Sheets como indicador de sync
+    var dot = document.getElementById('sheets-dot');
+    if (dot) {
+      dot.style.opacity = '0.2';
+      setTimeout(function(){ dot.style.opacity = '1'; }, 300);
+    }
+  } catch(e) {
+    console.warn('Sync falhou:', e);
+    throw e;
+  }
+}
+
+// ---- HISTÓRICO ----
 function showHistorico() {
   document.getElementById('app').style.display = 'none';
+  document.getElementById('rel-screen').style.display = 'none';
   document.getElementById('hist-screen').style.display = 'block';
   renderHistorico();
 }
 function showApp() {
   document.getElementById('hist-screen').style.display = 'none';
+  document.getElementById('rel-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 }
 function switchHistTab(tab) {
@@ -636,10 +817,19 @@ function switchHistTab(tab) {
   document.getElementById('tab-'+tab).classList.add('active');
   renderHistorico();
 }
+
+function limparFiltrosHist() {
+  document.getElementById('hf-data-inicio').value = '';
+  document.getElementById('hf-data-fim').value = '';
+  renderHistorico();
+}
+
 function renderHistorico() {
-  var filFil   = document.getElementById('hf-filial').value;
-  var filTipo  = document.getElementById('hf-tipo').value;
-  var filBusca = (document.getElementById('hf-busca').value || '').toLowerCase();
+  var filFil    = document.getElementById('hf-filial').value;
+  var filTipo   = document.getElementById('hf-tipo').value;
+  var filBusca  = (document.getElementById('hf-busca').value || '').toLowerCase();
+  var dataIni   = document.getElementById('hf-data-inicio').value;
+  var dataFim   = document.getElementById('hf-data-fim').value;
   var situFiltro = histTabAtual === 'finalizadas' ? 'Finalizada' : 'Cancelada';
 
   var lista = historico.filter(function(h) {
@@ -647,13 +837,28 @@ function renderHistorico() {
     if (filFil  && h.filial !== filFil) return false;
     if (filTipo && h.tipo   !== filTipo) return false;
     if (filBusca && !(h.id + h.cliente + h.empresa).toLowerCase().includes(filBusca)) return false;
+
+    // Filtro por período (data de inclusão do card)
+    if (dataIni || dataFim) {
+      var d = parseDataBR(h.data);
+      if (d) {
+        if (dataIni) {
+          var ini = new Date(dataIni + 'T00:00:00');
+          if (d < ini) return false;
+        }
+        if (dataFim) {
+          var fim = new Date(dataFim + 'T23:59:59');
+          if (d > fim) return false;
+        }
+      }
+    }
     return true;
   });
 
   var tbody = document.getElementById('hist-tbody');
   tbody.innerHTML = '';
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:24px;">Nenhum registro encontrado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:24px;">Nenhum registro encontrado.</td></tr>';
     return;
   }
   var tipoLabel = {entrega:'Entrega', substituicao:'Substituição', devolucao:'Devolução'};
@@ -670,7 +875,6 @@ function renderHistorico() {
   });
 }
 
-
 function excluirHistorico(id) {
   if (!isAdmin) return;
   if (!confirm('Excluir este registro do histórico? Esta ação não pode ser desfeita.')) return;
@@ -682,7 +886,92 @@ function excluirHistorico(id) {
   showToast('Registro excluído do histórico.');
 }
 
+// ---- RELATÓRIO ----
+function showRelatorio() {
+  document.getElementById('hist-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('rel-screen').style.display = 'block';
+  renderRelatorio();
+}
 
+function limparFiltrosRel() {
+  document.getElementById('rf-data-inicio').value = '';
+  document.getElementById('rf-data-fim').value = '';
+  document.getElementById('rf-cliente').value = '';
+  document.getElementById('rf-filial').value = '';
+  document.getElementById('rf-tipo').value = '';
+  document.getElementById('rf-situacao').value = '';
+  renderRelatorio();
+}
+
+function renderRelatorio() {
+  var dataIni  = document.getElementById('rf-data-inicio').value;
+  var dataFim  = document.getElementById('rf-data-fim').value;
+  var cliente  = (document.getElementById('rf-cliente').value || '').toLowerCase();
+  var filFil   = document.getElementById('rf-filial').value;
+  var filTipo  = document.getElementById('rf-tipo').value;
+  var filSit   = document.getElementById('rf-situacao').value;
+
+  // O relatório mostra apenas itens do histórico (Finalizada / Cancelada)
+  var lista = historico.filter(function(h) {
+    if (filSit   && h.situacao !== filSit) return false;
+    if (filFil   && h.filial   !== filFil) return false;
+    if (filTipo  && h.tipo     !== filTipo) return false;
+    if (cliente  && !(h.cliente + ' ' + (h.empresa||'')).toLowerCase().includes(cliente)) return false;
+
+    if (dataIni || dataFim) {
+      var d = parseDataBR(h.data);
+      if (d) {
+        if (dataIni) {
+          var ini = new Date(dataIni + 'T00:00:00');
+          if (d < ini) return false;
+        }
+        if (dataFim) {
+          var fim = new Date(dataFim + 'T23:59:59');
+          if (d > fim) return false;
+        }
+      }
+    }
+    return true;
+  });
+
+  // Contadores
+  var totalFin = lista.filter(function(h){ return h.situacao === 'Finalizada'; }).length;
+  var totalCan = lista.filter(function(h){ return h.situacao === 'Cancelada'; }).length;
+  document.getElementById('rel-total').textContent = lista.length;
+  document.getElementById('rel-fin').textContent   = totalFin;
+  document.getElementById('rel-can').textContent   = totalCan;
+
+  var tbody = document.getElementById('rel-tbody');
+  tbody.innerHTML = '';
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="rel-empty">Nenhum registro encontrado para os filtros selecionados.</td></tr>';
+    return;
+  }
+
+  var tipoLabel = {entrega:'Entrega', substituicao:'Substituição', devolucao:'Devolução'};
+  lista.sort(function(a,b){ return b.id.localeCompare(a.id); }).forEach(function(h) {
+    var tr = document.createElement('tr');
+    var sitColor = h.situacao === 'Finalizada' ? '#00897B' : '#757575';
+    tr.innerHTML =
+      '<td><strong>'+h.id+'</strong></td>'
+      +'<td>'+h.filial+'</td>'
+      +'<td>'+(tipoLabel[h.tipo]||h.tipo)+'</td>'
+      +'<td>'+(h.empresa||'—')+'</td>'
+      +'<td>'+(h.cliente||'—')+'</td>'
+      +'<td>'+(h.endereco||'—')+'</td>'
+      +'<td><span class="badge" style="background:'+sitColor+';color:#fff;font-size:.7rem;padding:3px 8px;">'+h.situacao+'</span></td>'
+      +'<td>'+(h.data||'')+'</td>'
+      +'<td>'+(h.hora||'')+'</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function imprimirRelatorio() {
+  window.print();
+}
+
+// ---- MODAL DEMANDA ----
 function checkSituacaoAlert() {
   var s    = document.getElementById('f-situacao').value;
   var tipo = document.getElementById('f-tipo').value;
@@ -850,14 +1139,12 @@ async function saveDemanda() {
         if (json.status === 'ok' && json.id) {
           idFinal = json.id;
         } else {
-          // fallback: usa o maior ID existente + 1 (global entre filiais)
           idFinal = proximoIdLocal();
         }
       } catch(e) {
         idFinal = proximoIdLocal();
       }
     } else {
-      // sem Sheets: usa o maior ID já existente + 1 (evita duplicatas entre usuários)
       idFinal = proximoIdLocal();
     }
   }
@@ -874,6 +1161,7 @@ async function saveDemanda() {
   };
 
   if (getSitHist(tipo).includes(situacao)) {
+    // Vai direto para o histórico
     historico.push(demanda);
     saveHistoricoLocal();
   } else {
@@ -887,7 +1175,6 @@ async function saveDemanda() {
   await enviarSheets(demanda, editandoId ? 'update' : 'insert');
 }
 
-
 async function excluir(filial, tipo, id) {
   if (!isAdmin) { showToast('Apenas o administrador pode excluir demandas.', 'error'); return; }
   if (!confirm('Excluir permanentemente este pedido?')) return;
@@ -898,64 +1185,7 @@ async function excluir(filial, tipo, id) {
   await enviarSheets({id: id, filial: filial, tipo: tipo}, 'delete');
 }
 
-// ---- POLLING TEMPO REAL (via POST para evitar bloqueio CORS) ----
-function iniciarPolling() {
-  pararPolling();
-  if (!sheetsURL) return;
-  pollingTimer = setInterval(buscarDadosSheets, POLLING_MS);
-}
-
-function pararPolling() {
-  if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
-}
-
-async function buscarDadosSheets() {
-  if (!sheetsURL) return;
-  try {
-    var resp = await fetch(sheetsURL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ acao: 'buscar' })
-    });
-    if (!resp.ok) return;
-    var json = await resp.json();
-    if (json.status !== 'ok' || !json.dados) return;
-
-    // Reconstrói dados por filial/tipo a partir do Sheets
-    var novosDados = {};
-    FILIAIS.forEach(function(f) {
-      novosDados[f] = { entrega: [], substituicao: [], devolucao: [] };
-    });
-
-    var sitHist = ['Finalizada', 'Cancelada'];
-    json.dados.forEach(function(item) {
-      if (!novosDados[item.filial]) return;
-      if (!novosDados[item.filial][item.tipo]) return;
-      if (sitHist.includes(item.situacao)) return;
-      // Garante zeros à esquerda no ID (Sheets pode converter para número)
-      item.id   = String(item.id).padStart(5, '0');
-      // Normaliza data e hora que o Sheets pode ter convertido para objeto Date
-      item.data = parseSheetsDate(item.data);
-      item.hora = parseSheetsHora(item.hora);
-      novosDados[item.filial][item.tipo].push(item);
-    });
-
-    dados = novosDados;
-    saveDadosLocal();
-    renderBoard();
-
-    // Pisca o dot do Sheets como indicador de sync
-    var dot = document.getElementById('sheets-dot');
-    if (dot) {
-      dot.style.opacity = '0.2';
-      setTimeout(function(){ dot.style.opacity = '1'; }, 300);
-    }
-  } catch(e) {
-    console.warn('Polling falhou:', e);
-  }
-}
-
-// sheets
+// ---- ENVIO PARA SHEETS ----
 async function enviarSheets(demanda, acao) {
   if (!sheetsURL) return;
   try {
@@ -974,25 +1204,30 @@ async function enviarSheets(demanda, acao) {
 
 function updateSheetsUI() {
   var connected = !!sheetsURL;
-  var btn = document.getElementById('btn-sheets-status');
-  var dot = document.getElementById('sheets-dot');
+  var btn   = document.getElementById('btn-sheets-status');
+  var dot   = document.getElementById('sheets-dot');
   var label = document.getElementById('sheets-status-label');
+  var refreshBtn = document.getElementById('btn-refresh');
   if (btn) {
     btn.className = 'btn-sheets ' + (connected ? 'connected' : 'disconnected');
     dot.className = 'sheets-dot ' + (connected ? 'on' : 'off');
     label.textContent = connected ? 'Sheets ✓' : 'Sheets';
     btn.title = connected ? 'Conectado ao Google Sheets — clique para configurar' : 'Sem conexão com Sheets — clique para configurar';
   }
+  if (refreshBtn) {
+    refreshBtn.style.opacity = connected ? '1' : '0.5';
+    refreshBtn.title = connected ? 'Sincronizar dados com Google Sheets' : 'Sheets não configurado';
+  }
   var banner = document.getElementById('sheets-banner');
-  if (banner) banner.style.display = 'none'; // banner substituído pelo botão do header
+  if (banner) banner.style.display = 'none';
 }
 
 function openConfig() {
   var connected = !!sheetsURL;
   document.getElementById('sheets-url-input').value = sheetsURL;
 
-  var bar = document.getElementById('config-status-bar');
-  var txt = document.getElementById('config-status-text');
+  var bar  = document.getElementById('config-status-bar');
+  var txt  = document.getElementById('config-status-text');
   var sdot = document.getElementById('config-status-dot');
   if (connected) {
     bar.className = 'sheets-status-bar connected';
@@ -1005,7 +1240,6 @@ function openConfig() {
   }
 
   document.getElementById('btn-disconnect').style.display = connected ? 'inline-flex' : 'none';
-
   document.getElementById('config-overlay').classList.add('open');
 }
 function closeConfig() { document.getElementById('config-overlay').classList.remove('open'); }
@@ -1016,7 +1250,7 @@ function saveConfig() {
   localStorage.setItem('sulmak_sheets_url', url);
   closeConfig();
   updateSheetsUI();
-  if (url) { buscarDadosSheets(); iniciarPolling(); } else { pararPolling(); }
+  if (url) buscarDadosSheets();
   showToast(url ? 'Google Sheets conectado!' : 'URL removida. Sheets desconectado.');
 }
 
@@ -1027,7 +1261,6 @@ function disconnectSheets() {
   document.getElementById('sheets-url-input').value = '';
   closeConfig();
   updateSheetsUI();
-  pararPolling();
   showToast('Google Sheets desconectado.', 'error');
 }
 
@@ -1051,7 +1284,7 @@ async function testSheets() {
   }
 }
 
-// modal rápido de troca de situação
+// ---- MODAL RÁPIDO DE TROCA DE SITUAÇÃO ----
 var sitChangeCtx = null;
 
 function openSitModal(filial, tipo, id) {
@@ -1079,16 +1312,17 @@ function closeSitModal() {
 
 async function saveSitChange() {
   if (!sitChangeCtx) return;
-  var filial   = sitChangeCtx.filial;
-  var tipo     = sitChangeCtx.tipo;
-  var id       = sitChangeCtx.id;
-  var novaSit  = document.getElementById('sit-select').value;
-  var idx      = dados[filial][tipo].findIndex(function(d){ return d.id===id; });
+  var filial  = sitChangeCtx.filial;
+  var tipo    = sitChangeCtx.tipo;
+  var id      = sitChangeCtx.id;
+  var novaSit = document.getElementById('sit-select').value;
+  var idx     = dados[filial][tipo].findIndex(function(d){ return d.id===id; });
   if (idx === -1) return;
   var item = dados[filial][tipo][idx];
   item.situacao = novaSit;
 
   if (getSitHist(tipo).includes(novaSit)) {
+    // Move para o histórico
     dados[filial][tipo].splice(idx, 1);
     historico.push(item);
     saveHistoricoLocal();
@@ -1103,7 +1337,7 @@ async function saveSitChange() {
   await enviarSheets(item, 'update');
 }
 
-
+// ---- BADGES E CARDS ----
 function badgeClass(s) {
   var map = {
     'Novo Pedido':               'badge-novo',
@@ -1178,7 +1412,6 @@ function renderBoard() {
     var sitAt = getSitAtivas(tipo);
     var ativas = items.filter(function(i){ return sitAt.includes(i.situacao); });
 
-    // atualiza o select de filtro
     var filterSel = document.getElementById('filter-'+tipo);
     if (filterSel) {
       var cur = filterSel.value;
@@ -1189,7 +1422,7 @@ function renderBoard() {
       if (cur) filterSel.value = cur;
     }
 
-      var filtro = filterSel ? filterSel.value : '';
+    var filtro = filterSel ? filterSel.value : '';
     if (filtro) ativas = ativas.filter(function(i){ return i.situacao === filtro; });
 
     document.getElementById('cnt-'+tipo).textContent = ativas.length;
