@@ -350,7 +350,7 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
   <div class="hist-body">
     <table class="hist-table" id="hist-table">
       <thead>
-        <tr><th>Pedido</th><th>Filial</th><th>Tipo</th><th>Cliente</th><th>Empresa</th><th>Situação</th><th>Data</th><th>Hora</th><th id="th-acoes" style="display:none;">Ações</th></tr>
+        <tr><th>Pedido</th><th>Filial</th><th>Tipo</th><th>Cliente</th><th>Empresa</th><th>Endereço</th><th>Contato</th><th>Produtos / Patrimônio / Valor</th><th>Obs</th><th>Situação</th><th>Data</th><th>Hora</th><th id="th-acoes" style="display:none;">Ações</th></tr>
       </thead>
       <tbody id="hist-tbody"></tbody>
     </table>
@@ -398,7 +398,7 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
     <table class="rel-table" id="rel-table">
       <thead>
         <tr>
-          <th>Pedido</th><th>Filial</th><th>Tipo</th><th>Empresa (Cliente)</th><th>Responsável</th><th>Endereço</th><th>Situação</th><th>Data</th><th>Hora</th>
+          <th>Pedido</th><th>Filial</th><th>Tipo</th><th>Empresa (Cliente)</th><th>Responsável</th><th>Endereço</th><th>Contato</th><th>Produtos / Patrimônio / Valor</th><th>Obs</th><th>Situação</th><th>Data</th><th>Hora</th>
         </tr>
       </thead>
       <tbody id="rel-tbody"></tbody>
@@ -858,7 +858,7 @@ function renderHistorico() {
   var tbody = document.getElementById('hist-tbody');
   tbody.innerHTML = '';
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:24px;">Nenhum registro encontrado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:#aaa;padding:24px;">Nenhum registro encontrado.</td></tr>';
     return;
   }
   var tipoLabel = {entrega:'Entrega', substituicao:'Substituição', devolucao:'Devolução'};
@@ -870,7 +870,23 @@ function renderHistorico() {
     var acaoCell = isAdmin
       ? '<td><button onclick="excluirHistorico(\''+h.id+'\')" style="background:transparent;border:none;color:#e53935;cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:4px;" title="Excluir registro">🗑️</button></td>'
       : '<td style="display:none;"></td>';
-    tr.innerHTML = '<td><strong>'+h.id+'</strong></td><td>'+h.filial+'</td><td>'+(tipoLabel[h.tipo]||h.tipo)+'</td><td>'+(h.empresa||'')+'</td><td>'+(h.cliente||'')+'</td><td><span class="badge" style="background:'+sitColor+';color:#fff;">'+h.situacao+'</span></td><td>'+(h.data||'')+'</td><td>'+(h.hora||'')+'</td>'+acaoCell;
+    // Monta produtos
+    var prodStr = '';
+    if (h.produtos && h.produtos.length) {
+      prodStr = h.produtos.map(function(p){
+        var parts = [p.nome];
+        if (p.periodo) parts.push(p.periodo);
+        if (p.valor)   parts.push('R$ '+p.valor);
+        if (h.tipo === 'substituicao') {
+          if (p.patrimonioRetorna) parts.push('Ret: '+p.patrimonioRetorna);
+          if (p.patrimonioNovo)    parts.push('Novo: '+p.patrimonioNovo);
+        } else {
+          if (p.patrimonio) parts.push('Pat: '+p.patrimonio);
+        }
+        return parts.join(' | ');
+      }).join('<br>');
+    }
+    tr.innerHTML = '<td><strong>'+h.id+'</strong></td><td>'+h.filial+'</td><td>'+(tipoLabel[h.tipo]||h.tipo)+'</td><td>'+(h.empresa||'')+'</td><td>'+(h.cliente||'')+'</td><td>'+(h.endereco||'')+'</td><td>'+(h.contato||'')+'</td><td style="font-size:.75rem;line-height:1.5;">'+prodStr+'</td><td style="font-size:.75rem;">'+(h.obs||'')+'</td><td><span class="badge" style="background:'+sitColor+';color:#fff;">'+h.situacao+'</span></td><td>'+(h.data||'')+'</td><td>'+(h.hora||'')+'</td>'+acaoCell;
     tbody.appendChild(tr);
   });
 }
@@ -945,7 +961,7 @@ function renderRelatorio() {
   var tbody = document.getElementById('rel-tbody');
   tbody.innerHTML = '';
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="rel-empty">Nenhum registro encontrado para os filtros selecionados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="rel-empty">Nenhum registro encontrado para os filtros selecionados.</td></tr>';
     return;
   }
 
@@ -953,6 +969,22 @@ function renderRelatorio() {
   lista.sort(function(a,b){ return b.id.localeCompare(a.id); }).forEach(function(h) {
     var tr = document.createElement('tr');
     var sitColor = h.situacao === 'Finalizada' ? '#00897B' : '#757575';
+    // Monta produtos
+    var prodStr = '';
+    if (h.produtos && h.produtos.length) {
+      prodStr = h.produtos.map(function(p){
+        var parts = [p.nome];
+        if (p.periodo) parts.push(p.periodo);
+        if (p.valor)   parts.push('R$ '+p.valor);
+        if (h.tipo === 'substituicao') {
+          if (p.patrimonioRetorna) parts.push('Ret: '+p.patrimonioRetorna);
+          if (p.patrimonioNovo)    parts.push('Novo: '+p.patrimonioNovo);
+        } else {
+          if (p.patrimonio) parts.push('Pat: '+p.patrimonio);
+        }
+        return parts.join(' | ');
+      }).join('<br>');
+    }
     tr.innerHTML =
       '<td><strong>'+h.id+'</strong></td>'
       +'<td>'+h.filial+'</td>'
@@ -960,6 +992,9 @@ function renderRelatorio() {
       +'<td>'+(h.empresa||'—')+'</td>'
       +'<td>'+(h.cliente||'—')+'</td>'
       +'<td>'+(h.endereco||'—')+'</td>'
+      +'<td>'+(h.contato||'—')+'</td>'
+      +'<td style="font-size:.75rem;line-height:1.5;">'+prodStr+'</td>'
+      +'<td style="font-size:.75rem;">'+(h.obs||'')+'</td>'
       +'<td><span class="badge" style="background:'+sitColor+';color:#fff;font-size:.7rem;padding:3px 8px;">'+h.situacao+'</span></td>'
       +'<td>'+(h.data||'')+'</td>'
       +'<td>'+(h.hora||'')+'</td>';
