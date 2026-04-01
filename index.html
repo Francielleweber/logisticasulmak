@@ -1144,70 +1144,112 @@ async function saveDemanda() {
   var cliente = document.getElementById('f-cliente').value.trim();
   if (!cliente) { alert('Informe o nome do responsável/cliente.'); return; }
 
-  var tipo     = document.getElementById('f-tipo').value;
-  var unidade  = document.getElementById('f-unidade').value;
-  var situacao = document.getElementById('f-situacao').value;
-  var now      = new Date();
-  var dataStr  = now.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
-  var horaStr  = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  // Desativa o botão para evitar duplo envio
+  var btnSave = document.querySelector('#overlay .btn-save');
+  if (btnSave) { btnSave.disabled = true; btnSave.textContent = 'Salvando...'; }
 
-  var idFinal = editandoId;
-  if (editandoId) {
-    // edição: remove versão antiga localmente
-    FILIAIS.forEach(function(f){ TIPOS.forEach(function(t){
-      var idx = dados[f][t].findIndex(function(d){ return d.id === editandoId; });
-      if (idx !== -1) dados[f][t].splice(idx, 1);
-    }); });
-    var hidx = historico.findIndex(function(h){ return h.id === editandoId; });
-    if (hidx !== -1) historico.splice(hidx, 1);
-  } else {
-    // novo pedido: busca o próximo ID global do Sheets (se conectado)
-    if (sheetsURL) {
-      try {
-        showToast('Obtendo número do pedido...');
-        var resp = await fetch(sheetsURL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ acao: 'proximoId' })
-        });
-        var json = await resp.json();
-        if (json.status === 'ok' && json.id) {
-          idFinal = json.id;
-        } else {
-          idFinal = proximoIdLocal();
-        }
-      } catch(e) {
-        idFinal = proximoIdLocal();
+  try {
+    var tipo     = document.getElementById('f-tipo').value;
+    var unidade  = document.getElementById('f-unidade').value;
+    var situacao = document.getElementById('f-situacao').value;
+    var now      = new Date();
+    var dataStr  = now.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+    var horaStr  = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+
+    var demanda = {
+      // id será preenchido abaixo
+      filial:   unidade,
+      tipo:     tipo,
+      situacao: situacao,
+      empresa:  document.getElementById('f-empresa').value.trim(),
+      cliente:  cliente,
+      endereco: document.getElementById('f-endereco').value.trim(),
+      contato:  document.getElementById('f-contato').value.trim(),
+      produtos: getProdutos(),
+      obs:      document.getElementById('f-obs').value.trim(),
+      data:     dataStr,
+      hora:     horaStr
+    };
+
+    if (editandoId) {
+      // ── EDIÇÃO ──────────────────────────────────────────────────────────
+      demanda.id = editandoId;
+
+      // Remove versão antiga do estado local
+      FILIAIS.forEach(function(f){ TIPOS.forEach(function(t){
+        var idx = dados[f][t].findIndex(function(d){ return d.id === editandoId; });
+        if (idx !== -1) dados[f][t].splice(idx, 1);
+      }); });
+      var hidx = historico.findIndex(function(h){ return h.id === editandoId; });
+      if (hidx !== -1) historico.splice(hidx, 1);
+
+      // Persiste localmente e fecha o modal
+      if (getSitHist(tipo).includes(situacao)) {
+        historico.push(demanda);
+        saveHistoricoLocal();
+      } else {
+        dados[unidade][tipo].push(demanda);
+        saveDadosLocal();
       }
+
+      closeModal();
+      renderBoard();
+      showToast('Demanda atualizada!');
+
+      // Envia ao Sheets em background (update)
+      await enviarSheets(demanda, 'update');
+
     } else {
-      idFinal = proximoIdLocal();
+      // ── INSERÇÃO ─────────────────────────────────────────────────────────
+      //  Uma única chamada HTTP: o GAS gera o ID atomicamente e o devolve.
+      //  Sem chamada prévia a proximoId → sem race condition, sem ida dupla.
+      if (sheetsURL) {
+        try {
+          showToast('Salvando demanda...');
+          var payload = Object.assign({}, demanda, { acao: 'insert' });
+          var resp = await fetch(sheetsURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload)
+          });
+          var json = await resp.json();
+          if (json.status === 'ok' && json.id) {
+            demanda.id = json.id;             // ID único gerado pelo servidor
+          } else {
+            // Sheets devolveu erro: usa ID local como fallback
+            demanda.id = proximoIdLocal();
+            showToast('Sheets retornou erro. ID local usado.', 'error');
+          }
+        } catch(e) {
+          // Falha de rede: usa ID local como fallback
+          demanda.id = proximoIdLocal();
+          showToast('Erro ao conectar ao Sheets. ID local usado.', 'error');
+          console.error('Sheets insert error:', e);
+        }
+      } else {
+        // Sem Sheets configurado: usa ID local
+        demanda.id = proximoIdLocal();
+      }
+
+      // Persiste localmente com o ID definitivo
+      if (getSitHist(tipo).includes(situacao)) {
+        historico.push(demanda);
+        saveHistoricoLocal();
+      } else {
+        dados[unidade][tipo].push(demanda);
+        saveDadosLocal();
+      }
+
+      closeModal();
+      renderBoard();
+      showToast('Demanda salva! Pedido ' + demanda.id);
+      // Nota: NÃO chama enviarSheets novamente — o insert já foi feito acima
     }
+
+  } finally {
+    // Reativa o botão independentemente do resultado
+    if (btnSave) { btnSave.disabled = false; btnSave.textContent = 'Salvar'; }
   }
-
-  var demanda = {
-    id: idFinal, filial: unidade, tipo: tipo, situacao: situacao,
-    empresa:  document.getElementById('f-empresa').value.trim(),
-    cliente:  cliente,
-    endereco: document.getElementById('f-endereco').value.trim(),
-    contato:  document.getElementById('f-contato').value.trim(),
-    produtos: getProdutos(),
-    obs:      document.getElementById('f-obs').value.trim(),
-    data:     dataStr, hora: horaStr
-  };
-
-  if (getSitHist(tipo).includes(situacao)) {
-    // Vai direto para o histórico
-    historico.push(demanda);
-    saveHistoricoLocal();
-  } else {
-    dados[unidade][tipo].push(demanda);
-    saveDadosLocal();
-  }
-
-  closeModal();
-  renderBoard();
-  showToast('Demanda salva com sucesso!');
-  await enviarSheets(demanda, editandoId ? 'update' : 'insert');
 }
 
 async function excluir(filial, tipo, id) {
@@ -1231,6 +1273,7 @@ async function enviarSheets(demanda, acao) {
       body: JSON.stringify(payload)
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
   } catch(e) {
     showToast('Erro ao sincronizar com Sheets.', 'error');
     console.error('Sheets error:', e);
