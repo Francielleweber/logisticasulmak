@@ -75,7 +75,7 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
 @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
 .card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; }
 .card-pedido-label { font-size:.72rem; color:#888; font-weight:500; }
-.card-num { font-size:.98rem; font-weight:700; color:#111; }
+.card-num { font-size:.72rem; font-weight:700; color:#666; }
 .card-filial-tag { font-size:.65rem; color:#1a7a3c; font-weight:600; background:#e8f5e9; padding:1px 5px; border-radius:3px; display:inline-block; margin-top:2px; }
 .card-date { font-size:.7rem; color:#999; margin-top:2px; }
 .badge { font-size:.73rem; font-weight:700; padding:5px 10px; border-radius:4px; white-space:nowrap; text-transform:uppercase; letter-spacing:.3px; flex-shrink:0; }
@@ -95,6 +95,9 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
 .badge-ag-pre-dev      { background:#2196F3; color:#fff; }
 .badge-dev-solicitada  { background:#3da14d; color:#fff; }
 .badge-coleta          { background:#2196F3; color:#fff; }
+/* Novos status */
+.badge-ag-rota         { background:#FF9800; color:#fff; }
+.badge-ag-manutencao   { background:#795548; color:#fff; }
 .card-nome { font-weight:700; font-size:.95rem; color:#111; margin:6px 0 5px; text-transform:uppercase; }
 .card-info { font-size:.76rem; color:#444; margin-bottom:2px; line-height:1.4; }
 .card-obs { font-size:.74rem; color:#555; margin-top:4px; line-height:1.4; }
@@ -350,7 +353,7 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
   <div class="hist-body">
     <table class="hist-table" id="hist-table">
       <thead>
-        <tr><th>Pedido</th><th>Filial</th><th>Tipo</th><th>Cliente</th><th>Empresa</th><th>Endereço</th><th>Contato</th><th>Produtos / Patrimônio / Valor</th><th>Obs</th><th>Situação</th><th>Data</th><th>Hora</th><th id="th-acoes" style="display:none;">Ações</th></tr>
+        <tr><th>Pedido</th><th>Filial</th><th>Tipo</th><th>Cliente</th><th>Empresa</th><th>Vendedor</th><th>Endereço</th><th>Contato</th><th>Produtos / Patrimônio / Valor</th><th>Obs</th><th>Situação</th><th>Data</th><th>Hora</th><th id="th-acoes" style="display:none;">Ações</th></tr>
       </thead>
       <tbody id="hist-tbody"></tbody>
     </table>
@@ -398,7 +401,7 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
     <table class="rel-table" id="rel-table">
       <thead>
         <tr>
-          <th>Pedido</th><th>Filial</th><th>Tipo</th><th>Empresa (Cliente)</th><th>Responsável</th><th>Endereço</th><th>Contato</th><th>Produtos / Patrimônio / Valor</th><th>Obs</th><th>Situação</th><th>Data</th><th>Hora</th>
+          <th>Pedido</th><th>Filial</th><th>Tipo</th><th>Empresa (Cliente)</th><th>Responsável</th><th>Vendedor</th><th>Endereço</th><th>Contato</th><th>Produtos / Patrimônio / Valor</th><th>Obs</th><th>Situação</th><th>Data</th><th>Hora</th>
         </tr>
       </thead>
       <tbody id="rel-tbody"></tbody>
@@ -428,6 +431,17 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
           </select>
         </div>
         <div class="fg"><label>Cliente (Empresa)</label><input type="text" id="f-empresa" placeholder="Ex: MGM, CLS CC 0160..." /></div>
+      </div>
+      <div class="form-row">
+        <div class="fg" style="position:relative;">
+          <label>Vendedor <span style="color:#e53935;">*</span></label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="f-vendedor" class="f-vendedor-select" style="flex:1;border:1px solid #ddd;border-radius:5px;padding:8px 10px;font-family:inherit;font-size:.88rem;outline:none;">
+              <option value="">-- Selecione o Vendedor --</option>
+            </select>
+            <button type="button" onclick="openVendedorModal()" title="Gerenciar vendedores" style="background:#f0f0f0;border:1px solid #ddd;border-radius:5px;padding:7px 10px;cursor:pointer;font-size:.85rem;white-space:nowrap;">⚙️</button>
+          </div>
+        </div>
       </div>
       <div id="situacao-alert" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:5px;padding:8px 12px;font-size:.8rem;color:#856404;margin-bottom:8px;">
         Ao salvar com esta situação, a demanda será movida para o Histórico e removida do board ativo.
@@ -515,6 +529,26 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
   </div>
 </div>
 
+<!-- MODAL VENDEDORES -->
+<div class="overlay" id="vendedor-overlay" onclick="if(event.target===this)closeVendedorModal()">
+  <div class="modal" style="width:420px;min-height:unset;">
+    <div class="modal-head" style="background:#37474F;">
+      <span>Gerenciar Vendedores</span>
+      <button class="modal-close" onclick="closeVendedorModal()">&#10005;</button>
+    </div>
+    <div class="modal-body" style="padding:18px;">
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <input type="text" id="novo-vendedor-input" placeholder="Nome do vendedor" onkeydown="if(event.key==='Enter')adicionarVendedor()" style="flex:1;border:1px solid #ddd;border-radius:5px;padding:8px 10px;font-family:inherit;font-size:.88rem;outline:none;" />
+        <button onclick="adicionarVendedor()" style="background:#1a7a3c;color:#fff;border:none;border-radius:5px;padding:8px 16px;font-weight:700;font-size:.85rem;cursor:pointer;">+ Adicionar</button>
+      </div>
+      <ul id="vendedor-list" style="list-style:none;padding:0;max-height:280px;overflow-y:auto;"></ul>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-save" onclick="closeVendedorModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // credenciais por filial
 const creds = {
@@ -529,9 +563,9 @@ const FILIAIS    = ['Porto Alegre','São Leopoldo','Passo Fundo','Mato Grosso do
 const TIPOS      = ['entrega','substituicao','devolucao'];
 
 const SIT_POR_TIPO = {
-  entrega:      ['Novo Pedido','C/ Patrimônio','Contrato Pronto','Em Rota','Em Falta','Finalizada','Cancelada'],
-  substituicao: ['Troca (Ag. Patrimônio)','Ag. Termo de Substituição','Lib. para Troca','Em Rota','Em Falta','Finalizada'],
-  devolucao:    ['Ag. Pré Devolução','Devolução Solicitada','Em Rota','Finalizada']
+  entrega:      ['Novo Pedido','C/ Patrimônio','Contrato Pronto','Ag. Rota','Em Rota','Ag. Manutenção','Em Falta','Finalizada','Cancelada'],
+  substituicao: ['Troca (Ag. Patrimônio)','Ag. Termo de Substituição','Lib. para Troca','Ag. Rota','Em Rota','Ag. Manutenção','Em Falta','Finalizada'],
+  devolucao:    ['Ag. Pré Devolução','Devolução Solicitada','Ag. Rota','Em Rota','Finalizada']
 };
 const SIT_HIST_POR_TIPO = {
   entrega:      ['Finalizada','Cancelada'],
@@ -553,6 +587,54 @@ let isAdmin      = false;
 let editandoId   = null;
 let histTabAtual = 'finalizadas';
 let sheetsURL    = localStorage.getItem('sulmak_sheets_url') || '';
+
+// ---- VENDEDORES ----
+let VENDEDORES = JSON.parse(localStorage.getItem('sulmak_vendedores') || '[]');
+function saveVendedores() { localStorage.setItem('sulmak_vendedores', JSON.stringify(VENDEDORES)); }
+function atualizarSelectVendedor(valorAtual) {
+  var selArr = document.querySelectorAll('.f-vendedor-select');
+  selArr.forEach(function(sel) {
+    sel.innerHTML = '<option value="">-- Selecione o Vendedor --</option>'
+      + VENDEDORES.map(function(v){ return '<option value="'+v+'"'+(v===valorAtual?' selected':'')+'>'+v+'</option>'; }).join('');
+    if (valorAtual) sel.value = valorAtual;
+  });
+}
+function openVendedorModal() {
+  renderVendedorList();
+  document.getElementById('vendedor-overlay').classList.add('open');
+}
+function closeVendedorModal() { document.getElementById('vendedor-overlay').classList.remove('open'); }
+function renderVendedorList() {
+  var ul = document.getElementById('vendedor-list');
+  ul.innerHTML = '';
+  if (!VENDEDORES.length) { ul.innerHTML = '<li style="color:#aaa;font-size:.82rem;padding:6px 0;">Nenhum vendedor cadastrado.</li>'; return; }
+  VENDEDORES.forEach(function(v, i) {
+    var li = document.createElement('li');
+    li.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:.88rem;';
+    li.innerHTML = '<span>'+v+'</span><button onclick="removerVendedor('+i+')" style="background:transparent;border:none;color:#e53935;cursor:pointer;font-size:.9rem;">🗑️</button>';
+    ul.appendChild(li);
+  });
+}
+function adicionarVendedor() {
+  var inp = document.getElementById('novo-vendedor-input');
+  var nome = inp.value.trim();
+  if (!nome) return;
+  if (VENDEDORES.includes(nome)) { showToast('Vendedor já cadastrado.', 'error'); return; }
+  VENDEDORES.push(nome);
+  saveVendedores();
+  inp.value = '';
+  renderVendedorList();
+  atualizarSelectVendedor();
+  showToast('Vendedor adicionado!');
+}
+function removerVendedor(i) {
+  if (!confirm('Remover o vendedor "'+VENDEDORES[i]+'"?')) return;
+  VENDEDORES.splice(i, 1);
+  saveVendedores();
+  renderVendedorList();
+  atualizarSelectVendedor();
+  showToast('Vendedor removido.');
+}
 
 // persistência local
 function loadCounters() {
@@ -684,6 +766,7 @@ function entrarNoApp() {
   document.getElementById('hist-screen').style.display = 'none';
   document.getElementById('rel-screen').style.display = 'none';
   atualizarBotoesFilial();
+  atualizarSelectVendedor('');
   updateSheetsUI();
   // Busca imediata ao entrar e inicia o auto-refresh de 60 segundos
   if (sheetsURL) {
@@ -971,7 +1054,7 @@ function renderHistorico() {
         return parts.join(' | ');
       }).join('<br>');
     }
-    tr.innerHTML = '<td><strong>'+h.id+'</strong></td><td>'+h.filial+'</td><td>'+(tipoLabel[h.tipo]||h.tipo)+'</td><td>'+(h.empresa||'')+'</td><td>'+(h.cliente||'')+'</td><td>'+(h.endereco||'')+'</td><td>'+(h.contato||'')+'</td><td style="font-size:.75rem;line-height:1.5;">'+prodStr+'</td><td style="font-size:.75rem;">'+(h.obs||'')+'</td><td><span class="badge" style="background:'+sitColor+';color:#fff;">'+h.situacao+'</span></td><td>'+(h.data||'')+'</td><td>'+(h.hora||'')+'</td>'+acaoCell;
+    tr.innerHTML = '<td><strong>'+h.id+'</strong></td><td>'+h.filial+'</td><td>'+(tipoLabel[h.tipo]||h.tipo)+'</td><td>'+(h.empresa||'')+'</td><td>'+(h.cliente||'')+'</td><td>'+(h.vendedor||'')+'</td><td>'+(h.endereco||'')+'</td><td>'+(h.contato||'')+'</td><td style="font-size:.75rem;line-height:1.5;">'+prodStr+'</td><td style="font-size:.75rem;">'+(h.obs||'')+'</td><td><span class="badge" style="background:'+sitColor+';color:#fff;">'+h.situacao+'</span></td><td>'+(h.data||'')+'</td><td>'+(h.hora||'')+'</td>'+acaoCell;
     tbody.appendChild(tr);
   });
 }
@@ -1076,6 +1159,7 @@ function renderRelatorio() {
       +'<td>'+(tipoLabel[h.tipo]||h.tipo)+'</td>'
       +'<td>'+(h.empresa||'—')+'</td>'
       +'<td>'+(h.cliente||'—')+'</td>'
+      +'<td>'+(h.vendedor||'—')+'</td>'
       +'<td>'+(h.endereco||'—')+'</td>'
       +'<td>'+(h.contato||'—')+'</td>'
       +'<td style="font-size:.75rem;line-height:1.5;">'+prodStr+'</td>'
@@ -1109,6 +1193,8 @@ function openModal(tipoPreset) {
   atualizarSituacoesPorTipo(tipo, null);
   document.getElementById('situacao-alert').style.display = 'none';
   ['f-empresa','f-cliente','f-endereco','f-contato','f-obs'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('f-vendedor').value = '';
+  atualizarSelectVendedor('');
   var pl = document.getElementById('produto-list');
   pl.innerHTML = '';
   addProdRow(null, tipo);
@@ -1132,6 +1218,7 @@ function openEditModal(filial, tipo, id) {
   document.getElementById('f-endereco').value = item.endereco || '';
   document.getElementById('f-contato').value  = item.contato  || '';
   document.getElementById('f-obs').value      = item.obs      || '';
+  atualizarSelectVendedor(item.vendedor || '');
   checkSituacaoAlert();
   var pl = document.getElementById('produto-list');
   pl.innerHTML = '';
@@ -1176,6 +1263,17 @@ function checkPatrimNovo(input) {
   }
 }
 
+function checkPatrimEntrega(input) {
+  if (input.value.trim()) {
+    var tipo = document.getElementById('f-tipo').value;
+    if (tipo === 'entrega') {
+      document.getElementById('f-situacao').value = 'C/ Patrimônio';
+      checkSituacaoAlert();
+      showToast('Situação alterada para C/ Patrimônio');
+    }
+  }
+}
+
 function addProdRow(p, tipo) {
   if (!tipo) tipo = document.getElementById('f-tipo').value;
   var pl = document.getElementById('produto-list');
@@ -1192,7 +1290,7 @@ function addProdRow(p, tipo) {
      +'<div class="fg"><label>Patrimônio Novo</label><input type="text" class="p-patrim-novo" placeholder="Nº" oninput="checkPatrimNovo(this)" value="'+(p&&p.patrimonioNovo?p.patrimonioNovo:'')+'"/></div>';
   } else {
     row2style   = 'grid-template-columns:1fr 1fr auto';
-    patrimFields = '<div class="fg"><label>Patrimônio</label><input type="text" class="p-patrim" placeholder="Nº" value="'+(p&&p.patrimonio?p.patrimonio:'')+'"/></div>';
+    patrimFields = '<div class="fg"><label>Patrimônio</label><input type="text" class="p-patrim" placeholder="Nº" oninput="checkPatrimEntrega(this)" value="'+(p&&p.patrimonio?p.patrimonio:'')+'"/></div>';
   }
 
   d.innerHTML =
@@ -1228,6 +1326,8 @@ function getProdutos() {
 async function saveDemanda() {
   var cliente = document.getElementById('f-cliente').value.trim();
   if (!cliente) { alert('Informe o nome do responsável/cliente.'); return; }
+  var vendedor = document.getElementById('f-vendedor').value;
+  if (!vendedor) { alert('Selecione o vendedor responsável.'); return; }
 
   var tipo     = document.getElementById('f-tipo').value;
   var unidade  = document.getElementById('f-unidade').value;
@@ -1242,6 +1342,7 @@ async function saveDemanda() {
     situacao: situacao,
     empresa:  document.getElementById('f-empresa').value.trim(),
     cliente:  cliente,
+    vendedor: vendedor,
     endereco: document.getElementById('f-endereco').value.trim(),
     contato:  document.getElementById('f-contato').value.trim(),
     produtos: getProdutos(),
@@ -1508,6 +1609,8 @@ async function saveSitChange() {
 // ---- BADGES E CARDS ----
 function badgeClass(s) {
   var map = {
+    'Ag. Rota':                 'badge-ag-rota',
+    'Ag. Manutenção':           'badge-ag-manutencao',
     'Novo Pedido':               'badge-novo',
     'C/ Patrimônio':             'badge-patrimonio',
     'Contrato Pronto':           'badge-contrato',
@@ -1559,6 +1662,7 @@ function buildCard(item, filial, tipo) {
     +'<span class="badge '+badgeClass(item.situacao)+'">'+item.situacao+'</span>'
     +'</div>'
     +(item.empresa?'<div class="card-nome">'+item.empresa+'</div>':'<div class="card-nome">'+item.cliente+'</div>')
+    +(item.vendedor?'<div class="card-info" style="font-size:.72rem;color:#1a7a3c;font-weight:600;">🧑‍💼 '+item.vendedor+'</div>':'')
     +(item.endereco?'<div class="card-info"><b>Endereço:</b> '+item.endereco+'</div>':'')
     +(item.contato?'<div class="card-info"><b>Contato:</b> '+item.contato+'</div>':'')
     +(item.empresa?'<div class="card-info"><b>Resp:</b> '+item.cliente+'</div>':'')
