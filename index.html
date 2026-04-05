@@ -591,12 +591,9 @@ let sheetsURL    = localStorage.getItem('sulmak_sheets_url') || '';
 // ---- VENDEDORES ----
 // ► Cadastre aqui os vendedores padrão (igual ao array de períodos no formulário):
 const VENDEDORES_PADRAO = [
-  'Leonardo',
-  'Aislan',
-  'Daniel Raupp',
-  'Murilo',
-  'Gabriel',
-  'Alisson'
+  'Vendedor 1',
+  'Vendedor 2',
+  'Vendedor 3'
   // Adicione mais linhas aqui, ex: 'João Silva',
 ];
 
@@ -667,9 +664,14 @@ function loadCounters() {
 function saveCounters(c) { localStorage.setItem('sulmak_counters', JSON.stringify(c)); }
 
 function loadDados() {
-  const s = localStorage.getItem('sulmak_dados');
-  if (s) return JSON.parse(s);
-  const d = {}; FILIAIS.forEach(f => { d[f] = { entrega:[], substituicao:[], devolucao:[] }; }); return d;
+  var s = localStorage.getItem('sulmak_dados');
+  var d = s ? JSON.parse(s) : {};
+  // Garante que todas as filiais e tipos existem mesmo que o localStorage esteja desatualizado
+  FILIAIS.forEach(function(f) {
+    if (!d[f]) d[f] = {};
+    TIPOS.forEach(function(t) { if (!d[f][t]) d[f][t] = []; });
+  });
+  return d;
 }
 function saveDadosLocal() { localStorage.setItem('sulmak_dados', JSON.stringify(dados)); }
 
@@ -960,6 +962,25 @@ async function buscarDadosSheets() {
       item.data = parseSheetsDate(item.data);
       item.hora = parseSheetsHora(item.hora);
       novosDados[item.filial][item.tipo].push(item);
+    });
+
+    // ── Preserva itens locais que ainda não chegaram ao Sheets (race condition fix) ──
+    // Se um item foi salvo localmente mas o Sheets ainda não confirmou, ele não aparece
+    // em json.ativos nem json.historico → não deve ser apagado do estado local.
+    var idsConfirmados = new Set();
+    (json.ativos    || []).forEach(function(i){ idsConfirmados.add(String(i.id).padStart(5,'0')); });
+    (json.historico || []).forEach(function(i){ idsConfirmados.add(String(i.id).padStart(5,'0')); });
+
+    FILIAIS.forEach(function(f) {
+      TIPOS.forEach(function(t) {
+        var local = dados[f] && dados[f][t] ? dados[f][t] : [];
+        local.forEach(function(item) {
+          if (!idsConfirmados.has(String(item.id).padStart(5,'0'))) {
+            // Ainda pendente — mantém no board até o Sheets confirmar
+            novosDados[f][t].push(item);
+          }
+        });
+      });
     });
 
     dados = novosDados;
