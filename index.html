@@ -589,8 +589,25 @@ let histTabAtual = 'finalizadas';
 let sheetsURL    = localStorage.getItem('sulmak_sheets_url') || '';
 
 // ---- VENDEDORES ----
-let VENDEDORES = JSON.parse(localStorage.getItem('sulmak_vendedores') || '[]');
-function saveVendedores() { localStorage.setItem('sulmak_vendedores', JSON.stringify(VENDEDORES)); }
+// ► Cadastre aqui os vendedores padrão (igual ao array de períodos no formulário):
+const VENDEDORES_PADRAO = [
+  'Leonardo',
+  'Aislan',
+  'Daniel Raupp',
+  'Murilo',
+  'Gabriel',
+  'Alisson'
+  // Adicione mais linhas aqui, ex: 'João Silva',
+];
+
+let _vendedoresExtra = JSON.parse(localStorage.getItem('sulmak_vendedores_extra') || '[]');
+let VENDEDORES = [...new Set([...VENDEDORES_PADRAO, ..._vendedoresExtra])];
+
+function saveVendedores() {
+  // Persiste apenas os extras adicionados pelo modal ⚙️ (os padrão já estão no código)
+  _vendedoresExtra = VENDEDORES.filter(function(v){ return !VENDEDORES_PADRAO.includes(v); });
+  localStorage.setItem('sulmak_vendedores_extra', JSON.stringify(_vendedoresExtra));
+}
 function atualizarSelectVendedor(valorAtual) {
   var selArr = document.querySelectorAll('.f-vendedor-select');
   selArr.forEach(function(sel) {
@@ -609,9 +626,14 @@ function renderVendedorList() {
   ul.innerHTML = '';
   if (!VENDEDORES.length) { ul.innerHTML = '<li style="color:#aaa;font-size:.82rem;padding:6px 0;">Nenhum vendedor cadastrado.</li>'; return; }
   VENDEDORES.forEach(function(v, i) {
+    var isPadrao = VENDEDORES_PADRAO.includes(v);
     var li = document.createElement('li');
     li.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:.88rem;';
-    li.innerHTML = '<span>'+v+'</span><button onclick="removerVendedor('+i+')" style="background:transparent;border:none;color:#e53935;cursor:pointer;font-size:.9rem;">🗑️</button>';
+    var tag = isPadrao ? '<span style="font-size:.68rem;background:#e8f5e9;color:#1a7a3c;border-radius:3px;padding:1px 5px;margin-left:6px;">padrão</span>' : '';
+    var btnRemove = isPadrao
+      ? '<span style="color:#bbb;font-size:.72rem;padding:2px 6px;">fixo</span>'
+      : '<button onclick="removerVendedor('+i+')" style="background:transparent;border:none;color:#e53935;cursor:pointer;font-size:.9rem;">🗑️</button>';
+    li.innerHTML = '<span>'+v+tag+'</span>'+btnRemove;
     ul.appendChild(li);
   });
 }
