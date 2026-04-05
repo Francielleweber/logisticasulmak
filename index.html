@@ -988,26 +988,39 @@ async function buscarDadosSheets() {
     });
 
     (json.ativos || []).forEach(function(item) {
-      if (!novosDados[item.filial] || !novosDados[item.filial][item.tipo]) return;
+      // Normaliza o nome da filial (espaços extras, variações de encoding)
+      var filialNorm = FILIAIS.find(function(f) {
+        return f === item.filial || f.trim() === String(item.filial || '').trim();
+      });
+      if (!filialNorm) {
+        console.warn('[SULMAK] Filial desconhecida vinda do Sheets:', JSON.stringify(item.filial), '| item id:', item.id);
+        return; // descarta, mas NÃO marca como confirmado (preservação vai mantê-lo localmente)
+      }
+      item.filial = filialNorm;
+      if (!novosDados[item.filial][item.tipo]) return;
       item.id   = String(item.id).padStart(5, '0');
       item.data = parseSheetsDate(item.data);
       item.hora = parseSheetsHora(item.hora);
       novosDados[item.filial][item.tipo].push(item);
     });
 
-    // ── Preserva itens locais que ainda não chegaram ao Sheets (race condition fix) ──
-    // Se um item foi salvo localmente mas o Sheets ainda não confirmou, ele não aparece
-    // em json.ativos nem json.historico → não deve ser apagado do estado local.
+    // ── idsConfirmados: apenas IDs que REALMENTE entraram no novosDados ──
+    // (não inclui itens descartados por filial inválida — esses serão preservados do local)
     var idsConfirmados = new Set();
-    (json.ativos    || []).forEach(function(i){ idsConfirmados.add(String(i.id).padStart(5,'0')); });
+    FILIAIS.forEach(function(f) {
+      TIPOS.forEach(function(t) {
+        novosDados[f][t].forEach(function(i) { idsConfirmados.add(i.id); });
+      });
+    });
+    // Histórico também é confirmado (já saiu do board)
     (json.historico || []).forEach(function(i){ idsConfirmados.add(String(i.id).padStart(5,'0')); });
 
+    // ── Preserva itens locais que ainda não chegaram ao Sheets ──
     FILIAIS.forEach(function(f) {
       TIPOS.forEach(function(t) {
         var local = dados[f] && dados[f][t] ? dados[f][t] : [];
         local.forEach(function(item) {
           if (!idsConfirmados.has(String(item.id).padStart(5,'0'))) {
-            // Ainda pendente — mantém no board até o Sheets confirmar
             novosDados[f][t].push(item);
           }
         });
