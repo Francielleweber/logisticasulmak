@@ -674,7 +674,6 @@ function loadDados() {
     if (!d[f]) d[f] = {};
     TIPOS.forEach(function(t) {
       if (!d[f][t]) d[f][t] = [];
-      // Normaliza campos em cada item ao carregar (defensivo)
       d[f][t].forEach(function(item) {
         item.vendedor = String(item.vendedor || '');
         item.empresa  = String(item.empresa  || '');
@@ -1019,7 +1018,7 @@ async function buscarDadosSheets() {
       item.id       = String(item.id).padStart(5, '0');
       item.data     = parseSheetsDate(item.data);
       item.hora     = parseSheetsHora(item.hora);
-      // Normaliza campos de texto (células vazias no Sheets chegam como 0 ou Date)
+      // Células vazias no Sheets chegam como número 0 — forçar string
       item.vendedor = String(item.vendedor || '');
       item.empresa  = String(item.empresa  || '');
       item.cliente  = String(item.cliente  || '');
@@ -1047,40 +1046,33 @@ async function buscarDadosSheets() {
     // Histórico também é confirmado (já saiu do board)
     (json.historico || []).forEach(function(i){ idsConfirmados.add(String(i.id).padStart(5,'0')); });
 
-    // ── Preserva itens locais não confirmados e os envia ao Sheets ──
+    // ── Preserva itens locais não confirmados e envia ao Sheets ──
     var pendentesEnvio = [];
     FILIAIS.forEach(function(f) {
       TIPOS.forEach(function(t) {
         var local = dados[f] && dados[f][t] ? dados[f][t] : [];
         local.forEach(function(item) {
-          var idNorm = String(item.id).padStart(5, '0');
-          if (!idsConfirmados.has(idNorm)) {
-            // Normaliza produtos antes de preservar/enviar
+          if (!idsConfirmados.has(String(item.id).padStart(5,'0'))) {
             if (typeof item.produtos === 'string') {
               try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
             }
             if (!Array.isArray(item.produtos)) item.produtos = [];
+            item.vendedor = String(item.vendedor || '');
             novosDados[f][t].push(item);
             pendentesEnvio.push(item);
           }
         });
       });
     });
-
-    // Envia pendentes ao Sheets em background (criados offline ou que falharam)
     if (pendentesEnvio.length > 0) {
-      console.log('[SULMAK] ' + pendentesEnvio.length + ' pedido(s) pendente(s) — enviando ao Sheets...');
+      console.log('[SULMAK] ' + pendentesEnvio.length + ' pedido(s) offline — enviando ao Sheets...');
       pendentesEnvio.forEach(function(item) {
-        var payload = Object.assign({}, item, { acao: 'insert' });
-        if (typeof payload.produtos !== 'string') {
-          payload.produtos = Array.isArray(payload.produtos) ? payload.produtos : [];
-        }
-        enqueueSync(payload);
+        enqueueSync(Object.assign({}, item, { acao: 'insert' }));
       });
       showToast('📤 ' + pendentesEnvio.length + ' pedido(s) offline enviado(s) ao Sheets!');
     }
 
-    // Ordena cada lista por ID numérico crescente (preserva ordem de criação)
+    // Ordena por ID numérico crescente (ordem de criação) para consistência
     FILIAIS.forEach(function(f) {
       TIPOS.forEach(function(t) {
         novosDados[f][t].sort(function(a, b) {
@@ -1514,23 +1506,49 @@ async function saveDemanda() {
     // ── EDIÇÃO ──────────────────────────────────────────────────────────
     demanda.id = editandoId;
 
-    // Remove versão antiga do estado local
+    // Preserva data/hora originais (não altera ao editar)
+    var itemOriginal = null;
     FILIAIS.forEach(function(f){ TIPOS.forEach(function(t){
-      var idx = dados[f][t].findIndex(function(d){ return d.id === editandoId; });
-      if (idx !== -1) dados[f][t].splice(idx, 1);
+      var found = dados[f][t].find(function(d){ return d.id === editandoId; });
+      if (found) itemOriginal = found;
     }); });
-    var hidx = historico.findIndex(function(h){ return h.id === editandoId; });
-    if (hidx !== -1) historico.splice(hidx, 1);
-
-    // Persiste localmente e fecha o modal IMEDIATAMENTE
-    if (getSitHist(tipo).includes(situacao)) {
-      historico.push(demanda);
-      saveHistoricoLocal();
-    } else {
-      dados[unidade][tipo].push(demanda);
-      saveDadosLocal();
+    if (!itemOriginal) itemOriginal = historico.find(function(h){ return h.id === editandoId; });
+    if (itemOriginal) {
+      demanda.data = itemOriginal.data;
+      demanda.hora = itemOriginal.hora;
     }
 
+    // Substitui NO MESMO ÍNDICE para preservar a ordem dos cards
+    var substituido = false;
+    FILIAIS.forEach(function(f){ TIPOS.forEach(function(t){
+      var idx = dados[f][t].findIndex(function(d){ return d.id === editandoId; });
+      if (idx !== -1) {
+        if (getSitHist(tipo).includes(situacao)) {
+          // Mudou para histórico: remove do board e adiciona ao histórico
+          dados[f][t].splice(idx, 1);
+          historico.push(demanda);
+        } else {
+          // Substitui no mesmo lugar — preserva a ordem
+          dados[f][t][idx] = demanda;
+        }
+        substituido = true;
+      }
+    }); });
+
+    // Se estava no histórico, atualiza lá também
+    var hidx = historico.findIndex(function(h){ return h.id === editandoId; });
+    if (hidx !== -1) {
+      if (getSitHist(tipo).includes(situacao)) {
+        historico[hidx] = demanda;
+      } else {
+        // Voltou para ativo
+        historico.splice(hidx, 1);
+        if (!substituido) dados[unidade][tipo].push(demanda);
+      }
+    }
+
+    saveDadosLocal();
+    saveHistoricoLocal();
     closeModal();
     renderBoard();
     showToast('Demanda atualizada!');
@@ -1746,7 +1764,6 @@ async function saveSitChange() {
   var idx     = dados[filial][tipo].findIndex(function(d){ return d.id===id; });
   if (idx === -1) return;
   var item = dados[filial][tipo][idx];
-  // Normaliza antes de operar
   if (typeof item.produtos === 'string') {
     try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
   }
@@ -1795,7 +1812,7 @@ function badgeClass(s) {
 }
 
 function buildCard(item, filial, tipo) {
-  // Proteção defensiva: garantir tipos corretos antes de renderizar
+  // Proteção final: garantir tipos corretos antes de renderizar
   if (typeof item.produtos === 'string') {
     try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
   }
