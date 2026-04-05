@@ -670,12 +670,11 @@ function saveCounters(c) { localStorage.setItem('sulmak_counters', JSON.stringif
 function loadDados() {
   var s = localStorage.getItem('sulmak_dados');
   var d = s ? JSON.parse(s) : {};
-  // Garante que todas as filiais e tipos existem mesmo que o localStorage esteja desatualizado
   FILIAIS.forEach(function(f) {
     if (!d[f]) d[f] = {};
     TIPOS.forEach(function(t) {
       if (!d[f][t]) d[f][t] = [];
-      // Normaliza campos ao carregar do localStorage
+      // Normaliza campos em cada item ao carregar (defensivo)
       d[f][t].forEach(function(item) {
         item.vendedor = String(item.vendedor || '');
         item.empresa  = String(item.empresa  || '');
@@ -1020,7 +1019,7 @@ async function buscarDadosSheets() {
       item.id       = String(item.id).padStart(5, '0');
       item.data     = parseSheetsDate(item.data);
       item.hora     = parseSheetsHora(item.hora);
-      // Garante que campos de texto nunca chegam como undefined/null
+      // Normaliza campos de texto (células vazias no Sheets chegam como 0 ou Date)
       item.vendedor = String(item.vendedor || '');
       item.empresa  = String(item.empresa  || '');
       item.cliente  = String(item.cliente  || '');
@@ -1029,7 +1028,7 @@ async function buscarDadosSheets() {
       item.obs      = String(item.obs      || '');
       item.situacao = String(item.situacao || '');
       item.tipo     = String(item.tipo     || '');
-      // Normaliza produtos: garante array
+      // Normaliza produtos
       if (typeof item.produtos === 'string') {
         try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
       }
@@ -1048,33 +1047,47 @@ async function buscarDadosSheets() {
     // Histórico também é confirmado (já saiu do board)
     (json.historico || []).forEach(function(i){ idsConfirmados.add(String(i.id).padStart(5,'0')); });
 
-    // ── Preserva itens locais não confirmados E envia ao Sheets (criados offline) ──
-    var pendentesUpload = [];
+    // ── Preserva itens locais não confirmados e os envia ao Sheets ──
+    var pendentesEnvio = [];
     FILIAIS.forEach(function(f) {
       TIPOS.forEach(function(t) {
         var local = dados[f] && dados[f][t] ? dados[f][t] : [];
         local.forEach(function(item) {
-          if (!idsConfirmados.has(String(item.id).padStart(5,'0'))) {
-            // Normaliza produtos antes de preservar
+          var idNorm = String(item.id).padStart(5, '0');
+          if (!idsConfirmados.has(idNorm)) {
+            // Normaliza produtos antes de preservar/enviar
             if (typeof item.produtos === 'string') {
               try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
             }
             if (!Array.isArray(item.produtos)) item.produtos = [];
             novosDados[f][t].push(item);
-            pendentesUpload.push(item); // marcado para enviar ao Sheets
+            pendentesEnvio.push(item);
           }
         });
       });
     });
 
-    // Envia pendentes em background (criados offline ou que nunca chegaram ao Sheets)
-    if (pendentesUpload.length > 0) {
-      console.log('[SULMAK] ' + pendentesUpload.length + ' item(ns) pendente(s) — enviando ao Sheets...');
-      pendentesUpload.forEach(function(item) {
-        enviarSheets(item, 'insert');
+    // Envia pendentes ao Sheets em background (criados offline ou que falharam)
+    if (pendentesEnvio.length > 0) {
+      console.log('[SULMAK] ' + pendentesEnvio.length + ' pedido(s) pendente(s) — enviando ao Sheets...');
+      pendentesEnvio.forEach(function(item) {
+        var payload = Object.assign({}, item, { acao: 'insert' });
+        if (typeof payload.produtos !== 'string') {
+          payload.produtos = Array.isArray(payload.produtos) ? payload.produtos : [];
+        }
+        enqueueSync(payload);
       });
-      showToast('📤 ' + pendentesUpload.length + ' pedido(s) offline enviado(s) ao Sheets!');
+      showToast('📤 ' + pendentesEnvio.length + ' pedido(s) offline enviado(s) ao Sheets!');
     }
+
+    // Ordena cada lista por ID numérico crescente (preserva ordem de criação)
+    FILIAIS.forEach(function(f) {
+      TIPOS.forEach(function(t) {
+        novosDados[f][t].sort(function(a, b) {
+          return parseInt(a.id, 10) - parseInt(b.id, 10);
+        });
+      });
+    });
 
     dados = novosDados;
     saveDadosLocal();
@@ -1089,6 +1102,8 @@ async function buscarDadosSheets() {
       item.vendedor = String(item.vendedor || '');
       item.empresa  = String(item.empresa  || '');
       item.cliente  = String(item.cliente  || '');
+      item.endereco = String(item.endereco || '');
+      item.contato  = String(item.contato  || '');
       item.obs      = String(item.obs      || '');
       if (typeof item.produtos === 'string') {
         try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
@@ -1731,6 +1746,12 @@ async function saveSitChange() {
   var idx     = dados[filial][tipo].findIndex(function(d){ return d.id===id; });
   if (idx === -1) return;
   var item = dados[filial][tipo][idx];
+  // Normaliza antes de operar
+  if (typeof item.produtos === 'string') {
+    try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
+  }
+  if (!Array.isArray(item.produtos)) item.produtos = [];
+  item.vendedor = String(item.vendedor || '');
   item.situacao = novaSit;
 
   if (getSitHist(tipo).includes(novaSit)) {
@@ -1774,6 +1795,15 @@ function badgeClass(s) {
 }
 
 function buildCard(item, filial, tipo) {
+  // Proteção defensiva: garantir tipos corretos antes de renderizar
+  if (typeof item.produtos === 'string') {
+    try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
+  }
+  if (!Array.isArray(item.produtos)) item.produtos = [];
+  item.vendedor = String(item.vendedor || '');
+  item.empresa  = String(item.empresa  || '');
+  item.cliente  = String(item.cliente  || '');
+
   var prodHTML = '';
   if (item.produtos && item.produtos.length) {
     prodHTML = '<div class="card-produtos">';
