@@ -897,9 +897,21 @@ function iniciarAutoRefresh() {
     if (el) el.textContent = '(' + restante + 's)';
   }, 1000);
 
+  var _autoErrCount = 0;
   _autoRefreshTimer = setInterval(async function() {
     restante = AUTO_REFRESH_SEG;
-    try { await buscarDadosSheets(); } catch(e) {}
+    try {
+      await buscarDadosSheets();
+      _autoErrCount = 0;
+    } catch(e) {
+      _autoErrCount++;
+      // Só avisa após 2 falhas consecutivas para não spammar em falhas momentâneas
+      if (_autoErrCount >= 2) {
+        var msg = e && e.message ? e.message : 'Falha na conexão.';
+        showToastLong('⚠️ Auto-refresh: ' + msg, 'error', 8000);
+        console.error('[SULMAK] Auto-refresh erro #' + _autoErrCount + ':', e);
+      }
+    }
   }, AUTO_REFRESH_SEG * 1000);
 }
 
@@ -914,6 +926,7 @@ function pararAutoRefresh() {
 }
 
 // ---- ATUALIZAÇÃO MANUAL ----
+var _refreshErrCount = 0;
 async function manualRefresh() {
   if (!sheetsURL) {
     showToast('Sheets não configurado. Configure a URL primeiro.', 'error');
@@ -925,16 +938,31 @@ async function manualRefresh() {
   btn.querySelector('.spin').style.opacity = '0.7';
   try {
     await buscarDadosSheets();
-    // Reinicia o countdown após refresh manual
     iniciarAutoRefresh();
+    _refreshErrCount = 0;
     showToast('Painel atualizado com sucesso!');
   } catch(e) {
-    showToast('Erro ao atualizar. Verifique a conexão.', 'error');
+    _refreshErrCount++;
+    var msg = e && e.message ? e.message : 'Falha na conexão com o servidor.';
+    // Exibe erro específico com duração maior
+    showToastLong('⚠️ Erro ao atualizar: ' + msg, 'error');
+    console.error('[SULMAK] Erro refresh:', e);
   } finally {
     btn.classList.remove('loading');
     btn.disabled = false;
     btn.querySelector('.spin').style.opacity = '1';
   }
+}
+
+// Toast com duração configurável
+function showToastLong(msg, type, ms) {
+  ms = ms || 7000;
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type === 'error' ? ' error' : '');
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function(){ t.style.display = 'none'; }, ms);
 }
 
 // ---- SINCRONIZAÇÃO COM SHEETS (busca ativos + histórico de uma vez) ----
@@ -946,9 +974,12 @@ async function buscarDadosSheets() {
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ acao: 'buscarTodos' })
     });
-    if (!resp.ok) return;
-    var json = await resp.json();
-    if (json.status !== 'ok') return;
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — o script pode precisar ser republicado.');
+    var texto = await resp.text();
+    var json;
+    try { json = JSON.parse(texto); }
+    catch(e) { throw new Error('Resposta inválida (não JSON). Verifique o deploy do Apps Script.'); }
+    if (json.status !== 'ok') throw new Error('Script retornou erro: ' + (json.msg || json.status));
 
     // ---- Reconstrói dados ATIVOS por filial/tipo ----
     var novosDados = {};
