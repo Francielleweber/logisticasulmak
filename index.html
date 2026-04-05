@@ -673,7 +673,16 @@ function loadDados() {
   // Garante que todas as filiais e tipos existem mesmo que o localStorage esteja desatualizado
   FILIAIS.forEach(function(f) {
     if (!d[f]) d[f] = {};
-    TIPOS.forEach(function(t) { if (!d[f][t]) d[f][t] = []; });
+    TIPOS.forEach(function(t) {
+      if (!d[f][t]) d[f][t] = [];
+      // Normaliza produtos: garante array em cada item carregado do localStorage
+      d[f][t].forEach(function(item) {
+        if (typeof item.produtos === 'string') {
+          try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
+        }
+        if (!Array.isArray(item.produtos)) item.produtos = [];
+      });
+    });
   });
   return d;
 }
@@ -873,8 +882,8 @@ async function processQueue() {
     }
   }
   if (!sucesso) {
-    showToast('Erro ao sincronizar com Sheets após 3 tentativas.', 'error');
-    console.error('Sync falhou definitivamente:', item);
+    showToast('⚠️ Falha ao enviar pedido ' + (item.id || '') + ' ao Sheets. Verifique a URL.', 'error');
+    console.error('[SULMAK] Sync falhou definitivamente. Payload:', JSON.stringify(item));
   }
   _syncQueue.shift();
   _syncing = false;
@@ -1005,6 +1014,11 @@ async function buscarDadosSheets() {
       item.id   = String(item.id).padStart(5, '0');
       item.data = parseSheetsDate(item.data);
       item.hora = parseSheetsHora(item.hora);
+      // Normaliza produtos: garante array ao receber do Sheets
+      if (typeof item.produtos === 'string') {
+        try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
+      }
+      if (!Array.isArray(item.produtos)) item.produtos = [];
       novosDados[item.filial][item.tipo].push(item);
     });
 
@@ -1456,11 +1470,9 @@ async function saveDemanda() {
 
     // Persiste localmente e fecha o modal IMEDIATAMENTE
     if (getSitHist(tipo).includes(situacao)) {
-      if (!Array.isArray(demanda.produtos)) demanda.produtos = [];
       historico.push(demanda);
       saveHistoricoLocal();
     } else {
-      if (!Array.isArray(demanda.produtos)) demanda.produtos = [];
       dados[unidade][tipo].push(demanda);
       saveDadosLocal();
     }
@@ -1554,6 +1566,11 @@ async function excluir(filial, tipo, id) {
 function enviarSheets(demanda, acao) {
   if (!sheetsURL) return;
   var payload = Object.assign({}, demanda, { acao: acao });
+  // Garante que produtos é array antes de enviar ao Sheets
+  if (typeof payload.produtos === 'string') {
+    try { payload.produtos = JSON.parse(payload.produtos); } catch(e) { payload.produtos = []; }
+  }
+  if (!Array.isArray(payload.produtos)) payload.produtos = [];
   enqueueSync(payload);
 }
 
@@ -1680,13 +1697,11 @@ async function saveSitChange() {
   var idx     = dados[filial][tipo].findIndex(function(d){ return d.id===id; });
   if (idx === -1) return;
   var item = dados[filial][tipo][idx];
-
   // Garante que produtos é sempre array antes de qualquer operação
   if (typeof item.produtos === 'string') {
     try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
   }
   if (!Array.isArray(item.produtos)) item.produtos = [];
-
   item.situacao = novaSit;
 
   if (getSitHist(tipo).includes(novaSit)) {
@@ -1730,12 +1745,11 @@ function badgeClass(s) {
 }
 
 function buildCard(item, filial, tipo) {
-  // Garante que produtos é sempre array (pode vir como string JSON do Sheets)
+  // Garante que produtos é sempre array (pode vir como string JSON do Sheets ou localStorage)
   if (typeof item.produtos === 'string') {
     try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
   }
   if (!Array.isArray(item.produtos)) item.produtos = [];
-
   var prodHTML = '';
   if (item.produtos && item.produtos.length) {
     prodHTML = '<div class="card-produtos">';
