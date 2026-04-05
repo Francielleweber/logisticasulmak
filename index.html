@@ -675,8 +675,14 @@ function loadDados() {
     if (!d[f]) d[f] = {};
     TIPOS.forEach(function(t) {
       if (!d[f][t]) d[f][t] = [];
-      // Normaliza produtos: garante array em cada item carregado do localStorage
+      // Normaliza campos ao carregar do localStorage
       d[f][t].forEach(function(item) {
+        item.vendedor = String(item.vendedor || '');
+        item.empresa  = String(item.empresa  || '');
+        item.cliente  = String(item.cliente  || '');
+        item.endereco = String(item.endereco || '');
+        item.contato  = String(item.contato  || '');
+        item.obs      = String(item.obs      || '');
         if (typeof item.produtos === 'string') {
           try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
         }
@@ -882,8 +888,8 @@ async function processQueue() {
     }
   }
   if (!sucesso) {
-    showToast('⚠️ Falha ao enviar pedido ' + (item.id || '') + ' ao Sheets. Verifique a URL.', 'error');
-    console.error('[SULMAK] Sync falhou definitivamente. Payload:', JSON.stringify(item));
+    showToast('Erro ao sincronizar com Sheets após 3 tentativas.', 'error');
+    console.error('Sync falhou definitivamente:', item);
   }
   _syncQueue.shift();
   _syncing = false;
@@ -1011,10 +1017,19 @@ async function buscarDadosSheets() {
       }
       item.filial = filialNorm;
       if (!novosDados[item.filial][item.tipo]) return;
-      item.id   = String(item.id).padStart(5, '0');
-      item.data = parseSheetsDate(item.data);
-      item.hora = parseSheetsHora(item.hora);
-      // Normaliza produtos: garante array ao receber do Sheets
+      item.id       = String(item.id).padStart(5, '0');
+      item.data     = parseSheetsDate(item.data);
+      item.hora     = parseSheetsHora(item.hora);
+      // Garante que campos de texto nunca chegam como undefined/null
+      item.vendedor = String(item.vendedor || '');
+      item.empresa  = String(item.empresa  || '');
+      item.cliente  = String(item.cliente  || '');
+      item.endereco = String(item.endereco || '');
+      item.contato  = String(item.contato  || '');
+      item.obs      = String(item.obs      || '');
+      item.situacao = String(item.situacao || '');
+      item.tipo     = String(item.tipo     || '');
+      // Normaliza produtos: garante array
       if (typeof item.produtos === 'string') {
         try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
       }
@@ -1033,17 +1048,33 @@ async function buscarDadosSheets() {
     // Histórico também é confirmado (já saiu do board)
     (json.historico || []).forEach(function(i){ idsConfirmados.add(String(i.id).padStart(5,'0')); });
 
-    // ── Preserva itens locais que ainda não chegaram ao Sheets ──
+    // ── Preserva itens locais não confirmados E envia ao Sheets (criados offline) ──
+    var pendentesUpload = [];
     FILIAIS.forEach(function(f) {
       TIPOS.forEach(function(t) {
         var local = dados[f] && dados[f][t] ? dados[f][t] : [];
         local.forEach(function(item) {
           if (!idsConfirmados.has(String(item.id).padStart(5,'0'))) {
+            // Normaliza produtos antes de preservar
+            if (typeof item.produtos === 'string') {
+              try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
+            }
+            if (!Array.isArray(item.produtos)) item.produtos = [];
             novosDados[f][t].push(item);
+            pendentesUpload.push(item); // marcado para enviar ao Sheets
           }
         });
       });
     });
+
+    // Envia pendentes em background (criados offline ou que nunca chegaram ao Sheets)
+    if (pendentesUpload.length > 0) {
+      console.log('[SULMAK] ' + pendentesUpload.length + ' item(ns) pendente(s) — enviando ao Sheets...');
+      pendentesUpload.forEach(function(item) {
+        enviarSheets(item, 'insert');
+      });
+      showToast('📤 ' + pendentesUpload.length + ' pedido(s) offline enviado(s) ao Sheets!');
+    }
 
     dados = novosDados;
     saveDadosLocal();
@@ -1052,9 +1083,17 @@ async function buscarDadosSheets() {
     // ---- Atualiza HISTÓRICO a partir do Sheets ----
     var novoHistorico = [];
     (json.historico || []).forEach(function(item) {
-      item.id   = String(item.id).padStart(5, '0');
-      item.data = parseSheetsDate(item.data);
-      item.hora = parseSheetsHora(item.hora);
+      item.id       = String(item.id).padStart(5, '0');
+      item.data     = parseSheetsDate(item.data);
+      item.hora     = parseSheetsHora(item.hora);
+      item.vendedor = String(item.vendedor || '');
+      item.empresa  = String(item.empresa  || '');
+      item.cliente  = String(item.cliente  || '');
+      item.obs      = String(item.obs      || '');
+      if (typeof item.produtos === 'string') {
+        try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
+      }
+      if (!Array.isArray(item.produtos)) item.produtos = [];
       novoHistorico.push(item);
     });
     historico = novoHistorico;
@@ -1566,11 +1605,6 @@ async function excluir(filial, tipo, id) {
 function enviarSheets(demanda, acao) {
   if (!sheetsURL) return;
   var payload = Object.assign({}, demanda, { acao: acao });
-  // Garante que produtos é array antes de enviar ao Sheets
-  if (typeof payload.produtos === 'string') {
-    try { payload.produtos = JSON.parse(payload.produtos); } catch(e) { payload.produtos = []; }
-  }
-  if (!Array.isArray(payload.produtos)) payload.produtos = [];
   enqueueSync(payload);
 }
 
@@ -1697,11 +1731,6 @@ async function saveSitChange() {
   var idx     = dados[filial][tipo].findIndex(function(d){ return d.id===id; });
   if (idx === -1) return;
   var item = dados[filial][tipo][idx];
-  // Garante que produtos é sempre array antes de qualquer operação
-  if (typeof item.produtos === 'string') {
-    try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
-  }
-  if (!Array.isArray(item.produtos)) item.produtos = [];
   item.situacao = novaSit;
 
   if (getSitHist(tipo).includes(novaSit)) {
@@ -1745,11 +1774,6 @@ function badgeClass(s) {
 }
 
 function buildCard(item, filial, tipo) {
-  // Garante que produtos é sempre array (pode vir como string JSON do Sheets ou localStorage)
-  if (typeof item.produtos === 'string') {
-    try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
-  }
-  if (!Array.isArray(item.produtos)) item.produtos = [];
   var prodHTML = '';
   if (item.produtos && item.produtos.length) {
     prodHTML = '<div class="card-produtos">';
