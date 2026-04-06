@@ -852,10 +852,17 @@ function openFilialSwitcher() {
 function closeFilialSwitcher() { document.getElementById('fsw-overlay').classList.remove('open'); }
 
 // ---- FILA DE SINCRONIZAÇÃO COM RETRY ----
-var _syncQueue = [];
-var _syncing   = false;
+var _syncQueue      = [];
+var _syncing        = false;
+// IDs que já foram enfileirados para INSERT e ainda não foram confirmados pelo Sheets.
+// Impede que o buscarDadosSheets reenvie o mesmo pedido como um segundo INSERT.
+var _pendingSyncIds = new Set();
 
 function enqueueSync(payload) {
+  // Marca o ID como pendente de confirmação ao enfileirar um insert
+  if (payload.acao === 'insert' && payload.id) {
+    _pendingSyncIds.add(String(payload.id).padStart(5, '0'));
+  }
   _syncQueue.push(payload);
   processQueue();
 }
@@ -888,6 +895,10 @@ async function processQueue() {
   if (!sucesso) {
     showToast('Erro ao sincronizar com Sheets após 3 tentativas.', 'error');
     console.error('Sync falhou definitivamente:', item);
+  }
+  // Remove o ID dos pendentes após insert confirmado (ou desistência após 3 tentativas)
+  if (item.acao === 'insert' && item.id) {
+    _pendingSyncIds.delete(String(item.id).padStart(5, '0'));
   }
   _syncQueue.shift();
   _syncing = false;
@@ -1052,7 +1063,10 @@ async function buscarDadosSheets() {
       TIPOS.forEach(function(t) {
         var local = dados[f] && dados[f][t] ? dados[f][t] : [];
         local.forEach(function(item) {
-          if (!idsConfirmados.has(String(item.id).padStart(5,'0'))) {
+          var idNorm = String(item.id).padStart(5,'0');
+          // Ignora itens que já estão na fila de INSERT (aguardando confirmação)
+          // para evitar envios duplicados ao Sheets
+          if (!idsConfirmados.has(idNorm) && !_pendingSyncIds.has(idNorm)) {
             if (typeof item.produtos === 'string') {
               try { item.produtos = JSON.parse(item.produtos); } catch(e) { item.produtos = []; }
             }
