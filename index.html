@@ -550,14 +550,7 @@ header { background:#013025; padding:0 16px; display:flex; align-items:center; j
 </div>
 
 <script>
-// credenciais por filial
-const creds = {
-  'Porto Alegre':       { user:'poa',   pass:'sulmak@poa' },
-  'São Leopoldo':       { user:'saoleo',  pass:'sulmak@saoleo' },
-  'Passo Fundo':        { user:'passofundo',    pass:'sulmak@pf' },
-  'Mato Grosso do Sul': { user:'matogrosso',    pass:'sulmak@ms' },
-  'admin':              { user:'admin', pass:'admin123', isAdmin:true }
-};
+// credenciais gerenciadas na aba "Usuarios" do Google Sheets — não ficam mais no HTML
 
 const FILIAIS    = ['Porto Alegre','São Leopoldo','Passo Fundo','Mato Grosso do Sul'];
 const TIPOS      = ['entrega','substituicao','devolucao'];
@@ -776,23 +769,43 @@ function doLogin() {
   var p   = document.getElementById('l-pass').value;
   var err = document.getElementById('l-err');
 
-  if (u === creds['admin'].user && p === creds['admin'].pass) {
-    isAdmin = true; usuarioLogado = 'admin';
-    filialLogada = null; filialAtual = FILIAIS[0];
-    err.style.display = 'none';
-    entrarNoApp(); return;
-  }
+  if (!u || !p) { err.style.display='block'; err.textContent='Preencha usuário e senha.'; return; }
+  if (!sheetsURL) { err.style.display='block'; err.textContent='Configure a URL do Google Sheets antes de entrar.'; return; }
 
-  if (!filialSel) { err.style.display='block'; err.textContent='Selecione uma filial.'; return; }
-  var c = creds[filialSel];
-  if (!c || u !== c.user || p !== c.pass) {
-    err.style.display='block'; err.textContent='Usuário ou senha inválidos.'; return;
-  }
-
-  isAdmin = false; usuarioLogado = u;
-  filialLogada = filialSel; filialAtual = filialSel;
+  var btn = document.querySelector('.btn-login');
+  btn.disabled = true; btn.textContent = 'Verificando...';
   err.style.display = 'none';
-  entrarNoApp();
+
+  fetch(sheetsURL, {
+    method: 'POST',
+    body: JSON.stringify({ acao: 'login', user: u, pass: p })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(res) {
+    btn.disabled = false; btn.textContent = 'Entrar';
+    if (res.status !== 'ok') {
+      err.style.display='block'; err.textContent = res.msg || 'Usuário ou senha inválidos.'; return;
+    }
+    isAdmin      = !!res.isAdmin;
+    usuarioLogado = u;
+    // Admin pode trocar de filial; usuário normal fica fixo na sua filial
+    if (isAdmin) {
+      filialLogada = null;
+      filialAtual  = filialSel || FILIAIS[0];
+    } else {
+      // filial vinda do Sheets (coluna filial da aba Usuarios)
+      var filialDoUsuario = res.filial || filialSel;
+      if (!filialDoUsuario) { err.style.display='block'; err.textContent='Filial não configurada para este usuário.'; return; }
+      filialLogada = filialDoUsuario;
+      filialAtual  = filialDoUsuario;
+    }
+    err.style.display = 'none';
+    entrarNoApp();
+  })
+  .catch(function() {
+    btn.disabled = false; btn.textContent = 'Entrar';
+    err.style.display='block'; err.textContent='Erro ao conectar. Verifique a URL do Sheets.';
+  });
 }
 
 function atualizarBotoesFilial() {
