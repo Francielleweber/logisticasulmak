@@ -564,13 +564,13 @@ const TIPOS      = ['entrega','substituicao','devolucao'];
 
 const SIT_POR_TIPO = {
   entrega:      ['Novo Pedido','C/ Patrimônio','Contrato Pronto','Ag. Rota','Em Rota','Ag. Manutenção','Em Falta','Finalizada','Cancelada'],
-  substituicao: ['Troca (Ag. Patrimônio)','Ag. Termo de Substituição','Lib. para Troca','Ag. Rota','Em Rota','Ag. Manutenção','Em Falta','Finalizada'],
-  devolucao:    ['Ag. Pré Devolução','Devolução Solicitada','Ag. Rota','Em Rota','Finalizada']
+  substituicao: ['Troca (Ag. Patrimônio)','Ag. Termo de Substituição','Lib. para Troca','Ag. Rota','Em Rota','Ag. Manutenção','Em Falta','Finalizada','Cancelada'],
+  devolucao:    ['Ag. Pré Devolução','Devolução Solicitada','Ag. Rota','Em Rota','Finalizada','Cancelada']
 };
 const SIT_HIST_POR_TIPO = {
   entrega:      ['Finalizada','Cancelada'],
-  substituicao: ['Finalizada'],
-  devolucao:    ['Finalizada']
+  substituicao: ['Finalizada','Cancelada'],
+  devolucao:    ['Finalizada','Cancelada']
 };
 
 function getSitAtivas(tipo) {
